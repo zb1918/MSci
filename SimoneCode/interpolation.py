@@ -16,20 +16,18 @@ define two r-theta grids
 '''
 
 r_max = 30
-n_step = 10
+n_step = 300
 r_offset = (r_max/n_step)/2 
 t_offset = (np.pi/(3*n_step))/2
 
 r1 = np.linspace(1, r_max, n_step)
-t1 = np.linspace(0, 2, 6*n_step)*np.pi
+t1 = np.linspace(0, 10, 6*n_step)*np.pi
 
 r2 = r1 + r_offset
 t2 = t1 + t_offset
 
 rax1, tax1 = np.meshgrid(r1, t1)  #grid for u_theta
 rax2, tax2 = np.meshgrid(r2, t2)  #grid for u_r offset in both directions wrt to grid for u_r
-
-
 
 #plt.plot(rax1,tax1,'.', rax2, tax2, 'x', color='k')
 #plt.show()
@@ -53,8 +51,8 @@ def pol2cart(rho, phi):
 xax1,yax1 = pol2cart(rax1, tax1)
 xax2,yax2 = pol2cart(rax2, tax2)
 
-plt.plot(xax1,yax1,'.')
-plt.plot(xax2,yax2,'o')
+#plt.plot(xax1,yax1,'.')
+#plt.plot(xax2,yax2,'o')
 
 #%%
 
@@ -84,6 +82,7 @@ u_t = test_vt(rax1,tax1)
 
 get_ur = inter.RectBivariateSpline(r1, t1, u_r.T)  #interpolator for u_r
 get_ut = inter.RectBivariateSpline(r1, t1, u_t.T)  #interpolator for u_theta
+
 
 #%%
 
@@ -116,7 +115,7 @@ for i in range(len(Angles)-1):
     
     plt.plot(x_R, y_R, color='r')
     
-#%%
+
 # solve ODE using interpolated functions ###
 def get_rhs(rad,theta,ur_interp,ut_interp):
     '''
@@ -144,8 +143,10 @@ for i in range(len(Angles_int)-1):
     x_R_int = Radii_int*np.sin(Angles_int[i])
     y_R_int = Radii_int*np.cos(Angles_int[i])
     
-    plt.plot(x_R_int, y_R_int,color='y', lw = 0.5)
+    plt.plot(x_R_int, y_R_int,color='k')
     
+#plt.xlim(-3,3)
+#plt.ylim(-3,3)
 plt.show()
 
 #%%
@@ -153,8 +154,8 @@ plt.show()
 #overlap known function and interpolator on a r-theta plane
 #for both u_r and u_theta
 
-fine_r = np.linspace(1,30,90)
-fine_t = np.linspace(0,2,100)*np.pi
+fine_r = np.linspace(1,30,200)
+fine_t = np.linspace(0,2,200)*np.pi
 
 R_grid, TH_grid = np.meshgrid(fine_r,fine_t)
 
@@ -213,8 +214,7 @@ for i in range(len(Angles)-1):
     plt.plot(Radii, Angles[i], color='r')
     
 for i in range(len(Angles_int)-1):
-    plt.plot(Radii_int, Angles_int[i], color='y', lw = 0.5)
+    plt.plot(Radii_int, Angles_int[i], color='k', lw = 0.5)
     
+#plt.xlim(0,3)
 plt.show()
-
-
