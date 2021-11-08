@@ -27,7 +27,7 @@ fun = test_f(xax_c, yax_c)
 #%%
 ### interpolate the function and evaluate it on a finer grid ###
 
-get_f = inter.RectBivariateSpline(coarse_x, coarse_y, fun)
+get_f = inter.RectBivariateSpline(coarse_x, coarse_y, fun.T)
 
 fine_x = np.arange(-20, 20.2, 0.2)
 fine_y = np.arange(-10, 10.1, 0.1)

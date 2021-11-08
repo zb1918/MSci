@@ -87,6 +87,11 @@ get_ut = inter.RectBivariateSpline(r1, t1, u_t.T)  #interpolator for u_theta
 
 #%%
 
+R = (1, r_max)
+TH = np.linspace(0,2,100)*np.pi
+r_eval = np.linspace(1,30,200) 
+
+### solve ODE with analytic functions ###
 def rhs_r_inv(rad,theta,v_r,v_t):
     '''
     right hand side of our differential equation
@@ -99,10 +104,6 @@ def rhs_r_inv(rad,theta,v_r,v_t):
         
     return f_r
 
-R = (1, r_max)
-TH = np.linspace(0,2,100)*np.pi
-r_eval = np.linspace(1,30,100) 
-
 #plot streamlines from known function
 sol_R = ivp(rhs_r_inv, R, TH, args=(test_vr,test_vt), t_eval=r_eval)
 
@@ -114,18 +115,18 @@ for i in range(len(Angles)-1):
     y_R = Radii*np.cos(Angles[i])
     
     plt.plot(x_R, y_R, color='r')
-
-#plot streamlines from interpolated function
-
+    
+#%%
+# solve ODE using interpolated functions ###
 def get_rhs(rad,theta,ur_interp,ut_interp):
     '''
     Right hand side of our differential equation dtheta/dr = u_t/(r*u_r)
     using the interpolated velocity functions 
-    
-    Set up with grid=False to avoid calculations with a single radius matched
-    to more than one angle which we do not need since we are interested in
-    calculating at a point with specific coordinates (r,theta)
     '''
+    #Set up with grid=False to avoid calculations with a single radius matched
+    #to more than one angle which we do not need since we are interested in
+    #calculating at a point with specific coordinates (r,theta)
+    
     vel_r = ur_interp(rad,theta,grid=False)
     vel_t = ut_interp(rad,theta,grid=False)
     
@@ -135,6 +136,7 @@ def get_rhs(rad,theta,ur_interp,ut_interp):
 
 sol_interp_R = ivp(get_rhs, R, TH, args=(get_ur,get_ut), t_eval=r_eval)
 
+#plot streamlines from interpolated function
 Radii_int = sol_interp_R.t
 Angles_int = sol_interp_R.y
 
@@ -214,3 +216,5 @@ for i in range(len(Angles_int)-1):
     plt.plot(Radii_int, Angles_int[i], color='y', lw = 0.5)
     
 plt.show()
+
+
