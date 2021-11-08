@@ -36,11 +36,12 @@ interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t))
 direct_sol = ivp(slm.dydt, rspan, thetas, t_eval = radii, args = (u_r, u_t))
 
 #----------------------creating plots and sliders-----------------------------#
+
 fig = plt.figure()
 ax = fig.subplots()
 plt.subplots_adjust(bottom = 0.25) #shifts the plot up
 ax_slide = plt.axes([0.2, 0.1, 0.7, 0.05])
-val_res = Slider(ax_slide, "res", color = "midnightblue", valmin=3, valmax=150, valinit=1, valstep=3)
+val_res = Slider(ax_slide, "res", color = "midnightblue", valmin=3, valmax=150, valinit=50, valstep=3)
 val_res.label.set_size(15)
 
 #---------------------------------PLOTTING------------------------------------#
@@ -50,7 +51,7 @@ p, q = [], []
 #plot streamlines in x, y basis
 for ys in range(len(interp_sol.y)):
     p.append(ax.plot(slm.cart_x(interp_sol.t,interp_sol.y[ys]), slm.cart_y(interp_sol.t, interp_sol.y[ys]), lw = 0.6, color = "navy"))
-    #q.append(ax.plot(slm.cart_x(direct_sol.t,direct_sol.y[ys]), slm.cart_y(direct_sol.t, direct_sol.y[ys]), lw = 0.6, color = "maroon"))
+    q.append(ax.plot(slm.cart_x(direct_sol.t,direct_sol.y[ys]), slm.cart_y(direct_sol.t, direct_sol.y[ys]), lw = 0.6, color = "maroon"))
 
 '''
 #plot streamlines in r, theta basis
@@ -86,6 +87,7 @@ def update(val):
     '''
 val_res.on_changed(update)
 
+plt.savefig("images/ut_cost.png")
 plt.show()   
        
 #%%
