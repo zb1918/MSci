@@ -19,7 +19,7 @@ coarse_y = np.arange(-10,11,1)
 xax_c, yax_c = np.meshgrid(coarse_x,coarse_y)
 
 def test_f(x,y):
-    f = np.exp((-(x**2)-(y**2))/5)
+    f = np.exp((-(x**2)-(y**2))/16)
     return f
 
 fun = test_f(xax_c, yax_c)
@@ -34,7 +34,7 @@ fine_y = np.arange(-10, 10.1, 0.1)
 
 xax_f, yax_f = np.meshgrid(fine_x, fine_y)
 
-int_fun = get_f(xax_f, yax_f)
+int_fun = get_f(xax_f, yax_f, grid=False)
 
 #%%
 ### plot the two functions on the two grids ###
