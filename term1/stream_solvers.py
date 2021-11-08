@@ -11,7 +11,7 @@ def u_r(r, theta):
     """
     hello hello hello
     """
-    return 1
+    return r**-0.5
 def u_theta(r, theta):
     return np.cos(theta)
 def dydt(r, theta, f_r, f_t):
@@ -44,7 +44,7 @@ def plot_mult(t, y, color = "green", lw = 1):
 
 
 #----------------------casting z onto given grid------------------------------#
-def cast(coarse_r, coarse_t, z, args =1):
+def cast(coarse_r, coarse_t, z):
     #function z is taken and cast onto coarse_r coarse_t grid
     #returns 2D array of the value of z at each point in the grod
     

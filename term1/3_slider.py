@@ -18,10 +18,10 @@ radii = np.linspace(1, r_lim, r_lim*10)
 rspan = np.array([radii[0], radii[-1]])
 
 def u_r_new(a):
-    return lambda r,t: a
+    return lambda r,t: r**-0.5
 
 def u_t_new(b):
-    return lambda r,t: np.sin(b*t)
+    return lambda r,t: np.cos(b*t)
 
 #generating the functions by passing argument to lambda functions above
 u_r = u_r_new(1)
@@ -47,7 +47,7 @@ ax = fig.subplots()
 ax_slide_a, ax_slide_b = plt.axes([0.2, 0.1, 0.7, 0.05]), plt.axes([0.2, 0.05, 0.7, 0.05])
 
 val_a = Slider(ax_slide_a, "a",
-               valmin=0.05,valmax=5.0,valinit=1,valstep=.002, color = "blue")
+               valmin=-5,valmax=5.0,valinit=1,valstep=.002, color = "blue")
 val_b = Slider(ax_slide_b, "b",
                valmin=0.05,valmax=5.0,valinit=1,valstep=.002, color = "red")
 

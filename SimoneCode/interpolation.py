@@ -99,7 +99,7 @@ def rhs_r_inv(rad,theta,v_r,v_t):
         
     return f_r
 
-R = (1,30)
+R = [1,30]
 TH = np.linspace(0,2,80)*np.pi
 r_eval = np.linspace(1,30,100) 
 
@@ -113,7 +113,7 @@ for i in range(len(Angles)-1):
     x_R = Radii*np.sin(Angles[i])
     y_R = Radii*np.cos(Angles[i])
     
-    plt.plot(x_R, y_R, color='r')
+    #plt.plot(x_R, y_R, color='r')
 
 #plot streamlines from interpolated function
 
@@ -133,6 +133,10 @@ def get_rhs(rad,theta,ur_interp,ut_interp):
         
     return f_r
 
+r_eval = np.linspace(1, 10, 200)
+R = [r_eval[0], r_eval[-1]]
+TH = np.linspace(1.5, 2, 100) *np.pi
+
 sol_interp_R = ivp(get_rhs, R, TH, args=(get_ur,get_ut), t_eval=r_eval)
 
 Radii_int = sol_interp_R.t
@@ -142,9 +146,27 @@ for i in range(len(Angles_int)-1):
     x_R_int = Radii_int*np.sin(Angles_int[i])
     y_R_int = Radii_int*np.cos(Angles_int[i])
     
-    plt.plot(x_R_int, y_R_int,color='y', lw = 0.5)
+    plt.plot(x_R_int, y_R_int,color='b', lw = 0.5)
     
 plt.show()
+
+rs = np.linspace(1, 30, 10)
+ts = np.linspace(0, 2*np.pi, 10)
+
+for r in rs:
+    for t in ts:
+        #plt.scatter(r, t)
+        intr = get_ur(r,t, grid=False)
+        intt = get_ut(r,t, grid=False)
+        rear = test_vr(r,t)
+        reat = test_vt(r,t)
+        perr = (intr - rear)/rear
+        pert = (intt - reat)/reat
+        
+        #plt.text(r, t, str(perr) + "\n" + str(pert))
+        
+
+
 
 #%%
 
