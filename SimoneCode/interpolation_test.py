@@ -19,7 +19,7 @@ coarse_y = np.arange(-10,11,1)
 xax_c, yax_c = np.meshgrid(coarse_x,coarse_y)
 
 def test_f(x,y):
-    f = x**2 - y + np.sin(x)
+    f = np.exp((-(x**2)-(y**2))/5)
     return f
 
 fun = test_f(xax_c, yax_c)
@@ -47,6 +47,7 @@ plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
 
+#%%
 fig2 = plt.figure()
 ax = Axes3D(fig2, auto_add_to_figure=False)
 fig2.add_axes(ax)

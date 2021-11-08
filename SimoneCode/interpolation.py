@@ -99,8 +99,8 @@ def rhs_r_inv(rad,theta,v_r,v_t):
         
     return f_r
 
-R = (1,30)
-TH = np.linspace(0,2,80)*np.pi
+R = (1, r_max)
+TH = np.linspace(0,2,100)*np.pi
 r_eval = np.linspace(1,30,100) 
 
 #plot streamlines from known function
