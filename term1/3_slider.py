@@ -10,12 +10,16 @@ from matplotlib.widgets import Slider
 plt.style.use("cool-style.mplstyle")
 
 thetas = np.linspace(0, 2, 50)*np.pi #initial conditions to cover 2pi radians
-thetas = thetas[1:-1]
+thetas = thetas[0:-1]
 
 #----------------------setting the radius limits------------------------------#
 r_lim = 20
-radii = np.linspace(1, r_lim, r_lim*10)
+def rad(res):
+    return lambda f: np.linspace(1,r_lim, res)
+radii = rad(100)(0)
 rspan = np.array([radii[0], radii[-1]])
+
+
 
 def u_r_new(a):
     return lambda r,t: r**-0.5

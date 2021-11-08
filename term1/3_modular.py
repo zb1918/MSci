@@ -22,18 +22,18 @@ def u_theta(r, theta, a =1):
     return np.cos(theta)
 
 
-thetas = np.linspace(0, 2, 100)*np.pi #initial conditions to cover 2pi radians
+thetas = np.linspace(0, 2, 80)*np.pi #initial conditions to cover 2pi radians
 thetas = thetas[0:-1]
 
 #----------------------setting the radius limits------------------------------#
 r_lim = 30
-radii = np.linspace(1, r_lim, r_lim*10)
+radii = slm.rad(r_lim, 100)(0)
 rspan = np.array([radii[0], radii[-1]])
 
 #----------------------coarse grid for interpolation--------------------------#
 #can adjust coarseness to evaluate accuracy of interpolation
-coarse_r = np.linspace(1, r_lim, 100)
-coarse_t = np.linspace(0, 6, 100)*np.pi
+coarse_r = slm.rad(r_lim, 100)(0)
+coarse_t = np.linspace(0, 3, 80)*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
 u_rad_cast = slm.cast(coarse_r, coarse_t, u_r)
@@ -62,7 +62,7 @@ interpolation with different grid/resolution for comparison
 
 #----------------------coarse grid for interpolation--------------------------#
 #can adjust coarseness to evaluate accuracy of interpolation
-coarse_r = np.linspace(1, r_lim, 10)
+coarse_r = rad(r_lim, 10)
 coarse_t = np.linspace(0, 2, 10)*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
@@ -111,7 +111,33 @@ plt.title("solving ODE for velocity functions")
 """
 #%%
 
-#slm.plot_mult(direct_sol.t, direct_sol.y, color = "orange", lw = 2)
+#slm.plot_mult(direct_sol.t, direct_sol.y, color = "red", lw = 2)
 slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 0.6)
 
+#test
+
+"""
+for r in np.linspace(0,20,10):
+    for t in (np.linspace(1.5, 2, 10)*np.pi):
+        plt.scatter(r, t)
+        intr = f_r(r,t, grid=False)
+        intt = f_t(r,t, grid=False)
+        rear = u_r(r,t)
+        reat = u_theta(r,t)
+        perr = (intr - rear)/rear
+        pert = (intt - reat)/reat
+        
+        plt.text(r, t, str(perr) + "\n" + str(pert))
+"""
+
+
+#128 x 256
+#will probably have to interpolate in log space instead for accuracy
+#hydro field (nomag)
+
+#plot r,theta plots for ur and utheta
+#can downgeade to linear interpolation and compare to cubic
+#can even go higherr (5th order spline/4th)
+#is thesimulatiom resolution appropriate for the problem?
+#
 

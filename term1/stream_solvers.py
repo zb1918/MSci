@@ -2,8 +2,6 @@ import numpy as np
 from scipy.integrate import solve_ivp as ivp
 import matplotlib.pyplot as plt
 from scipy.interpolate import RectBivariateSpline as spline
-
-
 plt.style.use("cool-style.mplstyle")
 
 #----------------------functional forms of known streamlines------------------#
@@ -24,8 +22,6 @@ def u_r_new(a):
 
 def u_theta_new(a):
     return lambda r,t: np.cos(t*a)
-
-
 
 
 #---------------------------plotting in cartesian-----------------------------#
@@ -69,3 +65,7 @@ def dydt_rbs(r, t, fr, ft):
     #needed to be solved in the form dt/dr = u_t/(r*u_r)
     return ft(r, t, grid=False)/(fr(r, t, grid=False)*r)
     
+
+#--------------------------lambda functions for slider use--------------------#
+def rad(r_lim, res):
+    return lambda f: np.linspace(1, r_lim, res)

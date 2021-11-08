@@ -26,6 +26,11 @@ t1 = np.linspace(0, 2, 6*n_step)*np.pi
 r2 = r1 + r_offset
 t2 = t1 + t_offset
 
+r1 = np.linspace(1,40,100)
+t1 = np.linspace(0,2.5, 100)*np.pi
+r2 = r1
+t2 = t1
+
 rax1, tax1 = np.meshgrid(r1, t1)  #grid for u_theta
 rax2, tax2 = np.meshgrid(r2, t2)  #grid for u_r offset in both directions wrt to grid for u_r
 
@@ -53,8 +58,8 @@ def pol2cart(rho, phi):
 xax1,yax1 = pol2cart(rax1, tax1)
 xax2,yax2 = pol2cart(rax2, tax2)
 
-plt.plot(xax1,yax1,'.')
-plt.plot(xax2,yax2,'o')
+#plt.plot(xax1,yax1,'.')
+#plt.plot(xax2,yax2,'o')
 
 #%%
 
@@ -99,7 +104,7 @@ def rhs_r_inv(rad,theta,v_r,v_t):
         
     return f_r
 
-R = [1,30]
+R = [1,40]
 TH = np.linspace(0,2,80)*np.pi
 r_eval = np.linspace(1,30,100) 
 
@@ -113,7 +118,7 @@ for i in range(len(Angles)-1):
     x_R = Radii*np.sin(Angles[i])
     y_R = Radii*np.cos(Angles[i])
     
-    #plt.plot(x_R, y_R, color='r')
+    #plt.plot(x_R, y_R, color='blue')
 
 #plot streamlines from interpolated function
 
@@ -133,11 +138,11 @@ def get_rhs(rad,theta,ur_interp,ut_interp):
         
     return f_r
 
-r_eval = np.linspace(1, 10, 200)
-R = [r_eval[0], r_eval[-1]]
-TH = np.linspace(1.5, 2, 100) *np.pi
+#r_eval = np.linspace(1, 30, 1000)
+#R = [r_eval[0], r_eval[-1]]
+#TH = np.linspace(0, 2, 100) *np.pi
 
-sol_interp_R = ivp(get_rhs, R, TH, args=(get_ur,get_ut), t_eval=r_eval)
+sol_interp_R = ivp(get_rhs, R, TH, t_eval=r_eval, args=(get_ur,get_ut))
 
 Radii_int = sol_interp_R.t
 Angles_int = sol_interp_R.y
@@ -146,23 +151,23 @@ for i in range(len(Angles_int)-1):
     x_R_int = Radii_int*np.sin(Angles_int[i])
     y_R_int = Radii_int*np.cos(Angles_int[i])
     
-    plt.plot(x_R_int, y_R_int,color='b', lw = 0.5)
+    plt.plot(x_R_int, y_R_int,color='red', lw = 0.5)
     
 plt.show()
 
 rs = np.linspace(1, 30, 10)
 ts = np.linspace(0, 2*np.pi, 10)
 
-for r in rs:
-    for t in ts:
-        #plt.scatter(r, t)
+for r in r_eval:
+    for t in TH:
+        
         intr = get_ur(r,t, grid=False)
         intt = get_ut(r,t, grid=False)
         rear = test_vr(r,t)
         reat = test_vt(r,t)
         perr = (intr - rear)/rear
         pert = (intt - reat)/reat
-        
+        #plt.scatter(r, t)
         #plt.text(r, t, str(perr) + "\n" + str(pert))
         
 
