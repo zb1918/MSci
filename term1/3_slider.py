@@ -5,6 +5,7 @@ from scipy.integrate import solve_ivp as ivp
 import matplotlib.pyplot as plt
 import stream_solvers as slm
 from matplotlib.widgets import Slider
+import pickle
 
 
 plt.style.use("cool-style.mplstyle")
@@ -25,7 +26,7 @@ def u_r_new(a):
     return lambda r,t: r**-0.5
 
 def u_t_new(b):
-    return lambda r,t: np.cos(b*t)
+    return lambda r,t: -np.sin(b*t)
 
 #generating the functions by passing argument to lambda functions above
 u_r = u_r_new(1)

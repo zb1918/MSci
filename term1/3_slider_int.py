@@ -8,11 +8,11 @@ plt.style.use("cool-style.mplstyle")
 def u_r_new(a):
     return lambda r,t: 1
 def u_t_new(a):
-    return lambda r,t: np.cos(a*t)
+    return lambda r,t: -np.sin(a*t)
 #generating functions with given coefficients
 u_r, u_t = u_r_new(1), u_t_new(1)
 
-t_res = 50
+t_res = 10
 ####DO NOT EDIT THETAS!!!!!!!###
 thetas = np.linspace(0, 2, t_res+1)[0:-1]*np.pi #initial conditions to cover 2pi radians
 #########!!!!!!!!!!!!!!#########
@@ -74,8 +74,8 @@ def update(val):
         p[ys][0].set_xdata(slm.cart_x(interp_sol.t, interp_sol.y[ys]))
         p[ys][0].set_ydata(slm.cart_y(interp_sol.t, interp_sol.y[ys]))
         plt.draw()
+    
     '''
-    ''''''
     #plot streamlines in r, theta basis
     for ys in range(len(interp_sol.y)): #loop through all intitial values
         #p is for interpolated
