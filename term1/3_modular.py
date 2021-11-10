@@ -19,7 +19,7 @@ plt.style.use("cool-style.mplstyle")
 def u_r(r, theta, a=1):
     return r**-0.5
 def u_theta(r, theta, a =1):
-    return np.cos(theta)
+    return -np.sin(theta)*np.cos(theta)
 
 
 thetas = np.linspace(0, 2, 80)*np.pi #initial conditions to cover 2pi radians
@@ -33,7 +33,7 @@ rspan = np.array([radii[0], radii[-1]])
 #----------------------coarse grid for interpolation--------------------------#
 #can adjust coarseness to evaluate accuracy of interpolation
 coarse_r = slm.rad(r_lim, 100)(0)
-coarse_t = np.linspace(0, 3, 80)*np.pi
+coarse_t = np.linspace(-6, 6, 300)*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
 u_rad_cast = slm.cast(coarse_r, coarse_t, u_r)
@@ -62,7 +62,7 @@ interpolation with different grid/resolution for comparison
 
 #----------------------coarse grid for interpolation--------------------------#
 #can adjust coarseness to evaluate accuracy of interpolation
-coarse_r = rad(r_lim, 10)
+coarse_r = slm.rad(r_lim, 10)(0)
 coarse_t = np.linspace(0, 2, 10)*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
