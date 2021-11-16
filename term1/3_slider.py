@@ -23,7 +23,7 @@ rspan = np.array([radii[0], radii[-1]])
 
 
 def u_r_new(a):
-    return lambda r,t: r**-0.5
+    return lambda r,t: 1
 
 def u_t_new(b):
     return lambda r,t: -np.sin(b*t)

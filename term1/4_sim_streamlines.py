@@ -1,41 +1,82 @@
-"""
-casts onto coarse grid and interpolates functions in
-stream_solvers.u_r and stream_solvers.u_theta
-
-"""
-
+import os
 import numpy as np
 from scipy.integrate import solve_ivp as ivp
 import matplotlib.pyplot as plt
 import stream_solvers as slm
+from scipy.io import loadmat
+
 plt.style.use("cool-style.mplstyle")
+hydro_sim = loadmat("sims/pure_HD.mat")
 
-def u_r(r, theta, a=1):
-    return 1
-def u_theta(r, theta, a =1):
-    return np.cos(theta+0.01)
+rb = hydro_sim['r']
+rb = rb/rb[0]
+thb = hydro_sim['th']
 
-thetas = np.linspace(0, 2, 80)*np.pi #initial conditions to cover 2pi radians
-thetas = thetas[0:-1]
+rb = rb.T
+rb = rb[0]
 
-#----------------------setting the radius limits------------------------------#
-r_lim = 30
-radii = slm.rad(r_lim, 100)(0)
-rspan = np.array([radii[0], radii[-1]])
+vrb = hydro_sim['vr']
+vthb = hydro_sim['vth']
+D = hydro_sim['D']
 
+X = np.outer(rb,np.sin(thb))
+Z = np.outer(rb,np.cos(thb))
+
+'''
+plt.contourf(X,Z,vrb, 64, cmap = "BuPu")
+c = plt.colorbar()
+c.set_label(r"\log_{10}(Density) [g/cm3]")
+'''
+
+'''
+plt.contourf(X,Z,vrb, 64, cmap = "BuPu", #
+             levels = [-3e6, -2e6, -1e6, 0]
+             )
+c = plt.colorbar()
+c.set_label("(vrb)")
+
+'''
+
+
+r_lim = rb[-1]
+radii = np.linspace(1.02, r_lim, 500)
+rspan = [radii[0], radii[-1]]
 #----------------------coarse grid for interpolation--------------------------#
 #can adjust coarseness to evaluate accuracy of interpolation
-coarse_r = slm.rad(r_lim, 100)(0)
-coarse_t = np.linspace(0, 3, 80)*np.pi
+#thetas = np.linspace(0, 1, 30)*np.pi
+thetas = np.array([0.25])*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
-u_rad_cast = slm.cast(coarse_r, coarse_t, u_r)
-u_the_cast = slm.cast(coarse_r, coarse_t, u_theta)
-
-#u_rad_cast = np.log(u_rad_cast)
-#u_the_cast = np.log(u_the_cast)
-f_r = slm.rbs(coarse_r, coarse_t, u_rad_cast)
-f_t = slm.rbs(coarse_r, coarse_t, u_the_cast)
+f_r = slm.rbs(rb, thb, vrb)
+f_t = slm.rbs(rb, thb, vthb)
 
 interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t))
 slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 0.6)
+
+#%%
+n=0
+for i in range(len(vrb)):
+    for j in range(len(vrb[0])):
+        
+        if vrb[i][j] < 0:
+            print(vrb[i][j])
+            print(i, j)
+            n+=1
+print(n)
+print(len(vrb) * len(vrb[0]))
+
+
+# P = (gamma -1)e
+# P = k/mu eT
+
+#u = internal energy/volume
+#tau = optical depth
+#ne = fraction of ionised hydrogen
+#d = mass density
+#
+
+
+"""
+plot log T as function of log(height) and investigate points just before the slope begins
+determine point at which radius will begin
+"""

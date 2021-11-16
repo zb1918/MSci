@@ -6,13 +6,13 @@ from matplotlib.widgets import Slider
 plt.style.use("cool-style.mplstyle")
 
 def u_r_new(a):
-    return lambda r,t: 1
+    return lambda r,t: r**-0.6
 def u_t_new(a):
-    return lambda r,t: -np.sin(a*t)
+    return lambda r,t: np.cos(t)
 #generating functions with given coefficients
 u_r, u_t = u_r_new(1), u_t_new(1)
 
-t_res = 10
+t_res = 100
 ####DO NOT EDIT THETAS!!!!!!!###
 thetas = np.linspace(0, 2, t_res+1)[0:-1]*np.pi #initial conditions to cover 2pi radians
 #########!!!!!!!!!!!!!!#########

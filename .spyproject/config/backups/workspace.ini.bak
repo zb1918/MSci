@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['term1\\3_modular.py', 'term1\\stream_solvers.py', 'term1\\2_int_known_basic.py', 'term1\\2_int_known.py', 'term1\\4_sim_streamlines.py', 'term1\\2_compartmentalised.py']
+recent_files = ['term1\\3_slider.py', 'term1\\4_sim_streamlines.py', 'term1\\3_modular.py', 'term1\\3_slider_int.py', 'term1\\1_drawing_streamlines.py', 'term1\\1_streamlines_imp.py', 'term1\\1_streamlines_rad.py', 'SimoneCode\\streamlines.py', 'term1\\stream_solvers.py']
 

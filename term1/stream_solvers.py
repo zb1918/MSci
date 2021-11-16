@@ -44,20 +44,6 @@ def cast(coarse_r, coarse_t, z):
     """
     
 
-    Parameters
-    ----------
-    coarse_r : TYPE
-        DESCRIPTION.
-    coarse_t : TYPE
-        DESCRIPTION.
-    z : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    z_cast : TYPE
-        DESCRIPTION.
-
     """
     #function z is taken and cast onto coarse_r coarse_t grid
     #returns 2D array of the value of z at each point in the grod
