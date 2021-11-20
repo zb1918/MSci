@@ -23,7 +23,7 @@ rspan = np.array([radii[0], radii[-1]])
 
 
 def u_r_new(a):
-    return lambda r,t: 1
+    return lambda r,t: a
 
 def u_t_new(b):
     return lambda r,t: -np.sin(b*t)
@@ -68,6 +68,8 @@ def update_a(val):
     
     #grabs the new value for a
     current_a = val_a.val
+    if current_a == 0:
+        return
     u_r = u_r_new(current_a)
     
     #updates the ivp solver with the new velocity
