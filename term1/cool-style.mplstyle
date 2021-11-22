@@ -293,10 +293,10 @@ axes.edgecolor: bcbcbc
 #axes.grid           : False   ## display grid or not
 #axes.grid.axis      : both    ## which axis the grid should apply to
 #axes.grid.which     : major   ## gridlines at major, minor or both ticks
-axes.titlesize      : 20   ## fontsize of the axes title
+axes.titlesize      : 22   ## fontsize of the axes title
 #axes.titleweight    : normal  ## font weight of title
-axes.titlepad       : 10     ## pad between axes and title in points
-axes.labelsize      : 16  ## fontsize of the x any y labels
+axes.titlepad       : 12     ## pad between axes and title in points
+axes.labelsize      : 18  ## fontsize of the x any y labels
 #axes.labelpad       : 4.0     ## space between label and axis
 #axes.labelweight    : normal  ## weight of the x and y labels
 #axes.labelcolor     : black
@@ -406,7 +406,7 @@ ytick.minor.right    : True   ## draw y axis right minor ticks
 #### GRIDS
 #grid.color       :   b0b0b0    ## grid color
 #grid.linestyle   :   -         ## solid
-#grid.linewidth   :   0.8       ## in points
+#grid.linewidth   :   1       ## in points
 #grid.alpha       :   1.0       ## transparency, between 0.0 and 1.0
 
 #### Legend
@@ -421,7 +421,7 @@ legend.fancybox      : True     ## if True, use a rounded box for the
 #legend.numpoints     : 1        ## the number of marker points in the legend line
 #legend.scatterpoints : 1        ## number of scatter points
 #legend.markerscale   : 1.0      ## the relative size of legend markers vs. original
-legend.fontsize      : 14
+legend.fontsize      : 16
 #legend.title_fontsize    : None ## None sets to the same as the default axes.
 ## Dimensions as fraction of fontsize:
 #legend.borderpad     : 0.4      ## border whitespace
@@ -527,10 +527,10 @@ image.cmap   : gray           ## A colormap name, gray etc...
 ## the default savefig params can be different from the display params
 ## e.g., you may want a higher resolution, or to make the figure
 ## background white
-savefig.dpi         : 400   ## figure dots per inch or 'figure'
+savefig.dpi         : 600   ## figure dots per inch or 'figure'
 #savefig.facecolor   : white    ## figure facecolor when saving
 #savefig.edgecolor   : white    ## figure edgecolor when saving
-#savefig.format      : png      ## png, ps, pdf, svg
+#savefig.format      : pdf      ## png, ps, pdf, svg
 #savefig.bbox        : standard ## 'tight' or 'standard'.
                                 ## 'tight' is incompatible with pipe-based animation
                                 ## backends but will workd with temporary file based ones:

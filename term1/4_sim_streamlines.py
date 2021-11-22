@@ -7,6 +7,8 @@ from scipy.io import loadmat
 from scipy.interpolate import interp1d as interp
 
 plt.style.use("cool-style.mplstyle")
+
+#%%
 hydro_sim = loadmat("sims/pure_HD.mat")
 
 rb = hydro_sim['r']
@@ -61,16 +63,6 @@ interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t))
 slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 0.6)
 
 #%%
-n=0
-for i in range(len(vrb)):
-    for j in range(len(vrb[0])):
-        
-        if vrb[i][j] < 0:
-            print(vrb[i][j])
-            print(i, j)
-            n+=1
-print(n)
-print(len(vrb) * len(vrb[0]))
 
 
 # P = (gamma -1)e

@@ -30,13 +30,14 @@ def cart_y(r, theta):
     return r*np.cos(theta)
 def cart_x(r,theta):
     return r*np.sin(theta)
-def plot_cart(r, theta, colour = "green", lw = 1):
-    plt.plot(cart_x(r, theta), cart_y(r, theta), color = colour, lw = lw)
 
-def plot_mult(t, y, color = "green", lw = 1):
+def plot_cart(r, theta, colour = "navy", lw = 1, ls = 'solid'):
+    plt.plot(cart_x(r, theta), cart_y(r, theta), color = colour, lw = lw, ls = ls)
+
+def plot_mult(t, y, color = "navy", lw = 1, ls = 'solid'):
     
     for ys in range(len(y)):
-        plot_cart(t, y[ys], color, lw = lw)   
+        plot_cart(t, y[ys], color, lw = lw, ls = ls)   
 
 
 #----------------------casting z onto given grid------------------------------#
