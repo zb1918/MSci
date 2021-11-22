@@ -196,17 +196,17 @@ contour plot of temperature on cartesian grid
 """
 
 fig, ax = plt.subplots()
-pl_r = 50
-day = len(T)
+rb_num = 50
+thb_num = len(T)
 #cut r and theta to desired grid size
-rb_short = rb.T[0][:pl_r] #original rb is array of array of single elements
-thb_short = (thb.T[:day]).T
+rb_short = rb[:rb_num] #original rb is array of array of single elements
+thb_short = (thb.T[:thb_num]).T
 
 #cut temperature to desired grid size
 T_short = T
-T_short = T_short.T[:pl_r]
+T_short = T_short.T[:rb_num]
 T_short = T_short.T
-T_short = T_short[:day]
+T_short = T_short[:thb_num]
 
 X = np.outer(rb_short,np.sin(thb_short))
 Z = np.outer(rb_short,np.cos(thb_short))
@@ -227,17 +227,17 @@ log(T) as a function of theta and height
 height in units of r0
 
 """
-pl_r = 30
-day = len(T)
+rb_num = 30
+thb_num = len(T)
 #cut r and theta to desired grid size
-rb_short = rb.T[0][:pl_r] #original rb is array of array of single elements
-thb_short = (thb.T[:day]).T
+rb_short = rb_sc[:rb_num] #original rb is array of array of single elements
+thb_short = (thb.T[:thb_num]).T
 
 #cut temperature to desired grid size
 T_short = T
-T_short = T_short.T[:pl_r]
+T_short = T_short.T[:rb_num]
 T_short = T_short.T
-T_short = T_short[:day]
+T_short = T_short[:thb_num]
 
 #plt.xkcd()
 plt.contourf(rb_short, thb_short/np.pi, np.log(T_short), 64, cmap = "BuPu")
@@ -256,17 +256,19 @@ log(T) as a function of theta and height
 height in units of m
 
 """
-pl_r = 30
-day = 70
+
+# number of points (radial and angular respectively)
+rb_num = 30
+thb_num = 70
 #cut r and theta to desired grid size
-rb_short = rb.T[0][:pl_r] #original rb is array of array of single elements
-thb_short = (thb.T[:day]).T
+rb_short = rb[:rb_num] #original rb is array of array of single elements
+thb_short = (thb.T[:thb_num]).T
 
 #cut temperature to desired grid size
 T_short = T
-T_short = T_short.T[:pl_r]
+T_short = T_short.T[:rb_num]
 T_short = T_short.T
-T_short = T_short[:day]
+T_short = T_short[:thb_num]
 
 #plt.xkcd()
 plt.contourf(rb_short, thb_short/np.pi, np.log(T_short), 64, cmap = "BuPu")
