@@ -76,10 +76,10 @@ vthb_log_signs = np.multiply(vthb_log, vthb_signs)
 
 
 #----------------------fine grid for post-interpolation-----------------------#
-radii = np.linspace(1.04, rb_sc_max-10, 2000)
+radii = np.linspace(1.04, rb_sc_max-10, 100)
 rspan = [radii[0], radii[-1]]
 #thetas = np.linspace(0, 0.75, 10)*np.pi
-thetas = np.array([0.32])*np.pi
+thetas = np.array([0.4])*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
 f_r = slm.rbs(rb_sc, thb, vrb)
@@ -93,11 +93,28 @@ f_t = slm.rbs(rb_sc, thb, vthb_log_signs)
 def event(t, y, fr, ft):
     return fr(t,y)
 event.terminal = True
+event.direction = -1
+
 interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t), events = [event])
 
 a = interp_sol.t_events
 b = interp_sol.y_events
 
+rspan = [a[0][0], 1.04]
+radii = np.linspace(a[0][0], 1.04)
+event.direction = 1
+interp_sol2 = ivp(slm.dydt_rbs, rspan, b[0][0], t_eval = radii, args = (f_r, f_t), events = [event])
+
+
+'''
+while interp_sol.status == 1:
+    rspan = [rspan[1], rspan[0]]
+    radii = np.linspace(rspan[0], rspan[1], 100)
+    interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t), events = [event])
+    a = interp_sol.t_events
+    b = interp_sol.y_events
+'''
+    
 valid_sols = []
 valid_sol_ys = []
 valid_sol_ts = []
@@ -142,12 +159,13 @@ if len(valid_sols) > 0:
 """
 """
 # all the solutions with deletion
-for i in range(len(valid_sol_ys)):
-    slm.plot_cart(valid_sol_ts[i], valid_sol_ys[i], ls = None)
+#for i in range(len(valid_sol_ys)):
+    #slm.plot_cart(valid_sol_ts[i], valid_sol_ys[i], ls = None)
     #plt.scatter(slm.cart_x(valid_sol_ts[i], valid_sol_ys[i]), slm.cart_y(valid_sol_ts[i], valid_sol_ys[i]))
 
 # all the solutions:
-slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 0.6)
+slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 2)
+slm.plot_mult(interp_sol2.t, interp_sol2.y, color = "blue", lw = 2)
 
 planet = plt.Circle((0, 0), 1, color=pl_color)
 ax.add_patch(planet)
