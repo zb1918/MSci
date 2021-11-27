@@ -143,7 +143,7 @@ for i in range(len(Angles_int)-1):
     x_R_int = Radii_int*np.sin(Angles_int[i])
     y_R_int = Radii_int*np.cos(Angles_int[i])
     
-    plt.plot(x_R_int, y_R_int,color='k')
+    plt.plot(x_R_int, y_R_int,color='b', lw = 0.5)
     
 #plt.xlim(-3,3)
 #plt.ylim(-3,3)
