@@ -12,6 +12,7 @@ def u_r(r, theta):
     return r**-0.5
 def u_theta(r, theta):
     return np.cos(theta)
+
 def dydt(r, theta, f_r, f_t):
     #returns the radial differential equation to be solved 
     #in the form of dt/dr = u_t/(r*u_r)
@@ -65,7 +66,7 @@ def rbs(r, t, z):
     return spline(r, t, z)
 
 def dydt_rbs(r, t, fr, ft):   
-    #finds the nterpolated functions fr and ft evaluated at finer points r, t
+    #finds the interpolated functions fr and ft evaluated at finer points r, t
     #and forms the differential equation 
     #needed to be solved in the form dt/dr = u_t/(r*u_r)
     return ft(r, t, grid=False)/(fr(r, t, grid=False)*r)

@@ -102,3 +102,4 @@ plt.plot(rb, np.log(T[0]), color = "navy")
 #plt.plot(radii, f_T(radii))
 
 
+

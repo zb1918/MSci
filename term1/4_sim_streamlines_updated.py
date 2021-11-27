@@ -90,7 +90,7 @@ vthb_log_signs = np.multiply(vthb_log, vthb_signs)
 #----------------------fine grid for post-interpolation-----------------------#
 radii = np.linspace(1.04, rb_sc_max, 500)
 rspan = [radii[0], radii[-1]]
-thetas = np.linspace(0, 1, 500)*np.pi
+thetas = np.linspace(0, 0.75, 10)*np.pi
 #thetas = np.array([0.4])*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
@@ -106,35 +106,55 @@ f_t = slm.rbs(rb_sc, thb, vthb_log_signs)
 interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t))
 
 valid_sols = []
+valid_sol_ys = []
+valid_sol_ts = []
+
 edge_of_valid = False
 # night side corrections
-n_s_x = 1.02    # radius of planet
-n_s_z = 0.02    # correction
+n_s_x = 1.0    # radius of planet
+n_s_z = 0.0    # correction
+
 for i in range(len(interp_sol.y)): # loop over all streamlines
     valid = True # true if streamline never crosses over to night side
-
-    for j in range(len(interp_sol.y[i])): # loop over all points of streamline
+    valid_sol_y = []
+    valid_sol_t = []
+    
+    for j in range(len(interp_sol.y[i])): # loop over points of one streamline
+    
         sol_x = interp_sol.t[j]*np.sin(interp_sol.y[i][j])
         sol_z = interp_sol.t[j]*np.cos(interp_sol.y[i][j])
-        if (sol_x**2 < n_s_x**2) & (sol_z < n_s_z):
+        
+        if ((sol_x**2 < n_s_x**2) and (sol_z < n_s_z)) or (sol_x < 0): # if on night side
             valid = False
             edge_of_valid = True
-        if sol_x**2 + sol_z**2 < 1:
+        else:
+            valid_sol_y.append(interp_sol.y[i][j])
+            valid_sol_t.append(interp_sol.t[j])
+            
+        if sol_x**2 + sol_z**2 < 1: # if inside planet
             valid = False
             edge_of_valid = True
-    if (valid == True) & (edge_of_valid == False):
-        slm.plot_cart(interp_sol.t, interp_sol.y[i])
-        slm.plot_cart(interp_sol.t, -1*interp_sol.y[i]) #reflection across axis
+    valid_sol_ys.append(valid_sol_y)
+    valid_sol_ts.append(valid_sol_t)
+         
+            
+            
+    if (valid == True):# & (edge_of_valid == False):
+        #slm.plot_cart(interp_sol.t, interp_sol.y[i])
+        #slm.plot_cart(interp_sol.t, -1*interp_sol.y[i]) #reflection across axis
         valid_sols.append(interp_sol.y[i])
 
 print("last valid angle ", round(valid_sols[-1][0], 3), "pi")
 print(len(valid_sols), "/", len(thetas), "dayside solutions")
-
 """
+"""
+for i in range(len(valid_sol_ys)):
+    slm.plot_cart(valid_sol_ts[i], valid_sol_ys[i], ls = None)
+    #plt.scatter(slm.cart_x(valid_sol_ts[i], valid_sol_ys[i]), slm.cart_y(valid_sol_ts[i], valid_sol_ys[i]))
 # all the solutions:
-slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 0.6)
+#slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 0.6)
 
-"""
+#slm.plot_mult(valid_sol_ts[0], valid_sol_ys[0][0], color = "red", lw = 0.7)
 
 planet = plt.Circle((0, 0), 1, color=pl_color)
 ax.add_patch(planet)
@@ -178,7 +198,7 @@ for i in range(128):
 contour plot of velocity on cartesian grid
 
 """
-plt.contourf(X,Z,vrb, 64, cmap = "BuPu")
+plt.contourf(X, Z, vthb, 64, cmap = "BuPu")
 c = plt.colorbar()
 c.set_label("velocity")
 plt.show()
@@ -208,11 +228,11 @@ T_short = T_short.T[:rb_num]
 T_short = T_short.T
 T_short = T_short[:thb_num]
 
-X = np.outer(rb_short,np.sin(thb_short))
-Z = np.outer(rb_short,np.cos(thb_short))
+X_short = np.outer(rb_short,np.sin(thb_short))
+Z_short = np.outer(rb_short,np.cos(thb_short))
 
 
-plt.contourf(X, Z, T_short.T, 64, cmap = "BuPu")
+plt.contourf(X_short, Z_short, T_short.T, 64, cmap = "BuPu")
 c = plt.colorbar()
 c.set_label("Temperature (K)")
 
