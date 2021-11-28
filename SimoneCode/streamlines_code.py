@@ -35,8 +35,11 @@ def rhs(x,y,u_x,u_y):
     return f
 
 interval = (x1[0], x1[len(x1)-1])
+a = np.arange(-100,1,1)
 
-sol = ivp(rhs, interval, np.arange(-100,1,1), args=(v1_x,v1_y), max_step = 0.5)
+for i in len(a):
+    sol = ivp(rhs, interval,a[i], args=(v1_x,v1_y), max_step = 0.5)
+
 
 a = sol.t
 b = sol.y

@@ -16,25 +16,18 @@ define two r-theta grids
 '''
 
 r_max = 30
-n_step = 10
+n_step = 300
 r_offset = (r_max/n_step)/2 
 t_offset = (np.pi/(3*n_step))/2
 
 r1 = np.linspace(1, r_max, n_step)
-t1 = np.linspace(0, 2, 6*n_step)*np.pi
+t1 = np.linspace(0, 10, 6*n_step)*np.pi
 
 r2 = r1 + r_offset
 t2 = t1 + t_offset
 
-r1 = np.linspace(1,40,100)
-t1 = np.linspace(0,2.5, 100)*np.pi
-r2 = r1
-t2 = t1
-
 rax1, tax1 = np.meshgrid(r1, t1)  #grid for u_theta
 rax2, tax2 = np.meshgrid(r2, t2)  #grid for u_r offset in both directions wrt to grid for u_r
-
-
 
 #plt.plot(rax1,tax1,'.', rax2, tax2, 'x', color='k')
 #plt.show()
@@ -90,8 +83,14 @@ u_t = test_vt(rax1,tax1)
 get_ur = inter.RectBivariateSpline(r1, t1, u_r.T)  #interpolator for u_r
 get_ut = inter.RectBivariateSpline(r1, t1, u_t.T)  #interpolator for u_theta
 
+
 #%%
 
+R = (1, r_max)
+TH = np.linspace(0,2,100)*np.pi
+r_eval = np.linspace(1,30,200) 
+
+### solve ODE with analytic functions ###
 def rhs_r_inv(rad,theta,v_r,v_t):
     '''
     right hand side of our differential equation
@@ -104,10 +103,6 @@ def rhs_r_inv(rad,theta,v_r,v_t):
         
     return f_r
 
-R = [1,40]
-TH = np.linspace(0,2,80)*np.pi
-r_eval = np.linspace(1,30,100) 
-
 #plot streamlines from known function
 sol_R = ivp(rhs_r_inv, R, TH, args=(test_vr,test_vt), t_eval=r_eval)
 
@@ -118,19 +113,19 @@ for i in range(len(Angles)-1):
     x_R = Radii*np.sin(Angles[i])
     y_R = Radii*np.cos(Angles[i])
     
-    #plt.plot(x_R, y_R, color='blue')
+    plt.plot(x_R, y_R, color='r')
+    
 
-#plot streamlines from interpolated function
-
+# solve ODE using interpolated functions ###
 def get_rhs(rad,theta,ur_interp,ut_interp):
     '''
     Right hand side of our differential equation dtheta/dr = u_t/(r*u_r)
     using the interpolated velocity functions 
-    
-    Set up with grid=False to avoid calculations with a single radius matched
-    to more than one angle which we do not need since we are interested in
-    calculating at a point with specific coordinates (r,theta)
     '''
+    #Set up with grid=False to avoid calculations with a single radius matched
+    #to more than one angle which we do not need since we are interested in
+    #calculating at a point with specific coordinates (r,theta)
+    
     vel_r = ur_interp(rad,theta,grid=False)
     vel_t = ut_interp(rad,theta,grid=False)
     
@@ -138,12 +133,9 @@ def get_rhs(rad,theta,ur_interp,ut_interp):
         
     return f_r
 
-#r_eval = np.linspace(1, 30, 1000)
-#R = [r_eval[0], r_eval[-1]]
-#TH = np.linspace(0, 2, 100) *np.pi
+sol_interp_R = ivp(get_rhs, R, TH, args=(get_ur,get_ut), t_eval=r_eval)
 
-sol_interp_R = ivp(get_rhs, R, TH, t_eval=r_eval, args=(get_ur,get_ut))
-
+#plot streamlines from interpolated function
 Radii_int = sol_interp_R.t
 Angles_int = sol_interp_R.y
 
@@ -151,35 +143,19 @@ for i in range(len(Angles_int)-1):
     x_R_int = Radii_int*np.sin(Angles_int[i])
     y_R_int = Radii_int*np.cos(Angles_int[i])
     
-    plt.plot(x_R_int, y_R_int,color='red', lw = 0.5)
+    plt.plot(x_R_int, y_R_int,color='b', lw = 0.5)
     
+#plt.xlim(-3,3)
+#plt.ylim(-3,3)
 plt.show()
-
-rs = np.linspace(1, 30, 10)
-ts = np.linspace(0, 2*np.pi, 10)
-
-for r in r_eval:
-    for t in TH:
-        
-        intr = get_ur(r,t, grid=False)
-        intt = get_ut(r,t, grid=False)
-        rear = test_vr(r,t)
-        reat = test_vt(r,t)
-        perr = (intr - rear)/rear
-        pert = (intt - reat)/reat
-        #plt.scatter(r, t)
-        #plt.text(r, t, str(perr) + "\n" + str(pert))
-        
-
-
 
 #%%
 
 #overlap known function and interpolator on a r-theta plane
 #for both u_r and u_theta
 
-fine_r = np.linspace(1,30,90)
-fine_t = np.linspace(0,2,100)*np.pi
+fine_r = np.linspace(1,30,200)
+fine_t = np.linspace(0,2,200)*np.pi
 
 R_grid, TH_grid = np.meshgrid(fine_r,fine_t)
 
@@ -238,6 +214,7 @@ for i in range(len(Angles)-1):
     plt.plot(Radii, Angles[i], color='r')
     
 for i in range(len(Angles_int)-1):
-    plt.plot(Radii_int, Angles_int[i], color='y', lw = 0.5)
+    plt.plot(Radii_int, Angles_int[i], color='k', lw = 0.5)
     
+#plt.xlim(0,3)
 plt.show()
