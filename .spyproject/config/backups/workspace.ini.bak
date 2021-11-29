@@ -4,8 +4,9 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = empty-project-type
-recent_files = ['term1\\stream_solvers.py', 'term1\\4_sim_streamlines_updated.py', 'term1\\4_sim_int_backwards.py']
+recent_files = ['SimoneCode\\Zahra_stream_solvers.py', 'SimoneCode\\Zahra_streamlines_updated.py', 'SimoneCode\\Zahra_int_backwards.py', 'SimoneCode\\JamesSim_test.py', 'SimoneCode\\int_backwards_attempt.py', '..\\..\\..\\Anaconda3\\lib\\site-packages\\scipy\\integrate\\_ivp\\ivp.py', '..\\..\\..\\Anaconda3\\lib\\site-packages\\numpy\\core\\shape_base.py']
 
 [main]
 version = 0.2.0
+recent_files = []
 

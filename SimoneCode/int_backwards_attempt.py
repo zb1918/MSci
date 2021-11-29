@@ -69,8 +69,14 @@ def r_min(theta):
 def ur_zero(radius,theta,u_r,u_th):  # define for events in sole_ivp
     vel_r = u_r(radius,theta)
     return vel_r
-    
+
+## Stop integration in the night side when u_t is negative as well ##
+def ut_zero(theta,radius,u_r,u_th):
+    vel_t = u_th(radius,theta)
+    return vel_t
+
 ur_zero.terminal = True   # to stop the integration when u_r goes to zero
+ut_zero.terminal = True   # to stop the integration when u_t goes to zero
 #ur_zero.direction = -1    # going from positive to negative u_r
 
 thetas = np.arange(0,1.84,0.05)
@@ -168,7 +174,7 @@ for i in range(len(theta_eval)):
 for i in range(len(Radii_fine_filter)):
     stream_x = Radii_fine_filter[i]*np.sin(Angles_fine_filter[i][0])
     stream_z = Radii_fine_filter[i]*np.cos(Angles_fine_filter[i][0])
-    plt.plot(stream_x, stream_z,'r','.')
+    plt.plot(stream_x, stream_z,'r','.',lw = 0.5)
 
 plt.contourf(X,Z,vrb/np.abs(vrb),2)         #plot the sign of v_r
 circle1 = plt.Circle((0, 0), 1, color='k')
@@ -179,6 +185,7 @@ plt.show()
 
 #%%
 ## Intergrate backwards by switching the interval
+## DON'T USE THIS USE THE NEXT CELL WHICH INTEGRATES IN THETA ##
 Radii_back = []
 Angles_back = []
 
@@ -196,4 +203,42 @@ for i in range(len(Radii_back)):
     stream_x_back = Radii_back[i]*np.sin(Angles_back[i][0])
     stream_z_back = Radii_back[i]*np.cos(Angles_back[i][0])
     plt.plot(stream_x_back, stream_z_back,'k','.')
+
+#%%
+## Integrate in the night side by switching to theta as variable ##
+
+def get_rhs_inv(theta,rad,ur_interp,ut_interp):
+    '''
+    Right hand side of our differential equation dr/dtheta = (u_r*r)/u_t
+    using the interpolated velocity functions 
+    '''
+    #Set up with grid=False to avoid calculations with a single radius matched
+    #to more than one angle which we do not need since we are interested in
+    #calculating at a point with specific coordinates (r,theta)   
+    vel_r = ur_interp(rad,theta,grid=False)
+    vel_t = ut_interp(rad,theta,grid=False)
     
+    f_r = (vel_r*rad)/(vel_t)
+    return f_r
+
+Angles_night = []
+Radii_night = []
+
+for i in range(len(th_terminal)):
+    interval_th = (th_terminal[i][0],np.pi)
+    th_eval = np.linspace(th_terminal[i][0],np.pi,50)
+    
+    sol_inv = ivp(get_rhs_inv, interval_th, r_terminal[i], args=(get_vr, get_vt),\
+                   max_step = 0.01, events=[ut_zero])
+        
+    Angles_night.append(sol_inv.t)
+    Radii_night.append(sol_inv.y)
+    
+for i in range(len(Angles_night)):
+    stream_x_night = Radii_night[i][0]*np.sin(Angles_night[i])
+    stream_z_night = Radii_night[i][0]*np.cos(Angles_night[i])
+    plt.plot(stream_x_night, stream_z_night,'y','.',lw = 0.5)
+    
+#%%
+# TRY TO MERGE THE STREAMLINES
+
