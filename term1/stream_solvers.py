@@ -32,8 +32,8 @@ def cart_y(r, theta):
 def cart_x(r,theta):
     return r*np.sin(theta)
 
-def plot_cart(r, theta, colour = "navy", lw = 1, ls = 'solid'):
-    plt.plot(cart_x(r, theta), cart_y(r, theta), color = colour, lw = lw, ls = ls)
+def plot_cart(r, theta, color = "navy", lw = 1, ls = 'solid'):
+    plt.plot(cart_x(r, theta), cart_y(r, theta), color = color, lw = lw, ls = ls)
 
 def plot_mult(t, y, color = "navy", lw = 1, ls = 'solid'):
     
@@ -73,5 +73,5 @@ def dydt_rbs(r, t, fr, ft):
     
 
 #--------------------------lambda functions for slider use--------------------#
-def rad(r_lim, res):
-    return lambda f: np.linspace(1, r_lim, res)
+def rad(r_min, r_lim, res):
+    return lambda f: np.linspace(r_min, r_lim, res)
