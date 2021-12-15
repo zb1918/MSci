@@ -48,7 +48,7 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 0.5, 100)*np.pi
+thetas = np.linspace(0, 0.5, 30)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
