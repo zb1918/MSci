@@ -82,7 +82,12 @@ def dydt_rbs(r, t, fr, ft):
     #and forms the differential equation 
     #needed to be solved in the form dt/dr = u_t/(r*u_r)
     return ft(r, t, grid=False)/(fr(r, t, grid=False)*r)
-    
+
+def dtdy_rbs(r, t, fr, ft):   
+    #finds the interpolated functions fr and ft evaluated at finer points r, t
+    #and forms the differential equation 
+    #needed to be solved in the form dt/dr = u_t/(r*u_r)
+    return r*fr(r, t, grid=False)/ft(r, t, grid=False)
 
 #--------------------------lambda functions for slider use--------------------#
 def rad(r_min, r_lim, res):
