@@ -75,11 +75,6 @@ vthb_log_signs = np.multiply(vthb_log, vthb_signs)
 
 
 
-#----------------------fine grid for post-interpolation-----------------------#
-radii = np.linspace(1.04, rb_sc_max-10, 100)
-rspan = [radii[0], radii[-1]]
-#thetas = np.linspace(0, 0.75, 10)*np.pi
-thetas = np.array([0.4])*np.pi
 
 #----------------------interpolating coarse grid points-----------------------#
 f_r = slm.rbs(rb_sc, thb, vrb)
@@ -90,20 +85,50 @@ f_r = slm.rbs(rb_sc, thb, vrb_log_signs)
 f_t = slm.rbs(rb_sc, thb, vthb_log_signs)
 
 """
+
+
 def event(t, y, fr, ft):
-    return fr(t,y)
+    return fr(t, y[0])
+
+def event2(t, y, fr, ft):
+    return fr(t, y[1])
 event.terminal = True
 event.direction = -1
 
-interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t), events = [event])
+#----------------------fine grid for post-interpolation-----------------------#
+rspan = [1.04, rb_sc_max]
+radii = slm.rad(rspan[0], rspan[1], 100)(0)
+
+
+#thetas = np.linspace(0, 0.75, 10)*np.pi
+thetas = np.array([0.4, 0.45])*np.pi
+
+
+interp_sol = ivp(slm.dydt_rbs, rspan, thetas, t_eval = radii, args = (f_r, f_t), events = (event, event2))
+
+
 
 a = interp_sol.t_events
 b = interp_sol.y_events
+"""
+interp_sol.t = np.append(interp_sol.t, a[0][0])
+
+interp_sol.y = interp_sol.y.tolist()
+interp_sol.y[0].append(b[0][0][0])
+interp_sol.y = np.array(interp_sol.y)
 
 rspan = [a[0][0], 1.04]
-radii = np.linspace(a[0][0], 1.04)
+radii = np.linspace(a[0][0], 1.04, 1000)
 event.direction = 1
 interp_sol2 = ivp(slm.dydt_rbs, rspan, b[0][0], t_eval = radii, args = (f_r, f_t), events = [event])
+"""
+# all the solutions:
+slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 2)
+#slm.plot_mult(interp_sol2.t, interp_sol2.y, color = "blue", lw = 2)
+
+
+
+
 
 
 '''
@@ -163,9 +188,6 @@ if len(valid_sols) > 0:
     #slm.plot_cart(valid_sol_ts[i], valid_sol_ys[i], ls = None)
     #plt.scatter(slm.cart_x(valid_sol_ts[i], valid_sol_ys[i]), slm.cart_y(valid_sol_ts[i], valid_sol_ys[i]))
 
-# all the solutions:
-slm.plot_mult(interp_sol.t, interp_sol.y, color = "blue", lw = 2)
-slm.plot_mult(interp_sol2.t, interp_sol2.y, color = "blue", lw = 2)
 
 planet = plt.Circle((0, 0), 1, color=pl_color)
 ax.add_patch(planet)
@@ -178,13 +200,12 @@ plt.show()
 contour plot of velocity on cartesian grid
 
 """
-a = interp_sol.t_events
-b = interp_sol.y_events
+
 
 plt.contourf(X, Z, vrb, 64, cmap = "BuPu", levels = [-2e8, 0, 2e8])
 c = plt.colorbar()
 c.set_label("velocity")
 for i in range(len(a)):
-    plt.scatter(slm.cart_x(a[i], b[0]), slm.cart_y(a[i], b[0]), color = 'red')
+    plt.scatter(slm.cart_x(a[i], b[i]), slm.cart_y(a[i], b[i]), color = 'red')
 plt.show()
 

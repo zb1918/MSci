@@ -12,7 +12,7 @@ pl_color = 'slategrey'
 """
 extraction of data and physical calculations
 """
-hydro_sim = loadmat("sims/pure_HD.mat") #extract pure_HD simulation
+hydro_sim = loadmat("term1/sims/pure_HD.mat") #extract pure_HD simulation
 
 #----------------------------scaling radial distances-------------------------#
 rb = hydro_sim['r']             
@@ -195,7 +195,7 @@ for i in range(128):
 """"""
 #%%
 """
-contour plot of velocity on cartesian grid
+contour plot of angukar velocity on cartesian grid
 
 """
 plt.contourf(X, Z, vthb, 64, cmap = "BuPu")
@@ -219,7 +219,7 @@ fig, ax = plt.subplots()
 rb_num = 50
 thb_num = len(T)
 #cut r and theta to desired grid size
-rb_short = rb[:rb_num] #original rb is array of array of single elements
+rb_short = rb_sc[:rb_num] #original rb is array of array of single elements
 thb_short = (thb.T[:thb_num]).T
 
 #cut temperature to desired grid size

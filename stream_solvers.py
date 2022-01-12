@@ -2,7 +2,19 @@ import numpy as np
 from scipy.integrate import solve_ivp as ivp
 import matplotlib.pyplot as plt
 from scipy.interpolate import RectBivariateSpline as spline
+from scipy.interpolate import interp1d as interp
+from scipy.interpolate import interp2d as interp2
+from scipy.signal import savgol_filter
+from scipy.optimize import curve_fit
+
 plt.style.use("cool-style.mplstyle")
+
+
+#-------------------------------misc. functions-------------------------------#
+def sigmoid(x, L, x0, k, b):
+    y = L / (1 + np.exp(-k * (x - x0))) + b
+    return (y)
+
 
 #----------------------functional forms of known streamlines------------------#
 def u_r(r, theta):
@@ -32,8 +44,8 @@ def cart_y(r, theta):
 def cart_x(r,theta):
     return r*np.sin(theta)
 
-def plot_cart(r, theta, colour = "navy", lw = 1, ls = 'solid'):
-    plt.plot(cart_x(r, theta), cart_y(r, theta), color = colour, lw = lw, ls = ls)
+def plot_cart(r, theta, color = "navy", lw = 1, ls = 'solid'):
+    plt.plot(cart_x(r, theta), cart_y(r, theta), color = color, lw = lw, ls = ls)
 
 def plot_mult(t, y, color = "navy", lw = 1, ls = 'solid'):
     
@@ -70,8 +82,56 @@ def dydt_rbs(r, t, fr, ft):
     #and forms the differential equation 
     #needed to be solved in the form dt/dr = u_t/(r*u_r)
     return ft(r, t, grid=False)/(fr(r, t, grid=False)*r)
-    
+
+def dtdy_rbs(r, t, fr, ft):   
+    #finds the interpolated functions fr and ft evaluated at finer points r, t
+    #and forms the differential equation 
+    #needed to be solved in the form dt/dr = u_t/(r*u_r)
+    return r*fr(r, t, grid=False)/ft(r, t, grid=False)
 
 #--------------------------lambda functions for slider use--------------------#
-def rad(r_lim, res):
-    return lambda f: np.linspace(1, r_lim, res)
+def rad(r_min, r_lim, res):
+    return lambda f: np.linspace(r_min, r_lim, res)
+
+
+#--------------------------sigmoid fitting for temperature--------------------#
+def fit_sigmoid(rads, thes, temp):
+    """
+    interpolates temperature into function f_T
+    fits a sigmoid of f_T(r) for all angles
+    
+    Parameters
+    ----------
+    rads : 1d array
+        radii at which temperature is determined.
+    thes : 1d array
+        angles at which temperature is determined.
+    temp : 2d matrix
+        temperature of grid.
+
+    Returns
+    -------
+    None.
+
+    """
+    f_T = interp2(rads, thes, np.log(temp), kind = 'cubic')
+ 
+    fine_rb = np.linspace(rads[0], rads[-1], len(rads)*100)
+    
+    for t in thes[0:116]:
+        # temps = temp[np.array(np.where(thes == t)).item()]
+        # temperatures along a single angle
+        
+        p0 = np.array([max(f_T(rads, t)), np.median(rads), 1, min(f_T(rads, t))]) # this is an mandatory initial guess
+        popt, pcov = curve_fit(sigmoid, rads, f_T(rads, t), p0, method='lm')
+        plt.plot(fine_rb, sigmoid(fine_rb, *popt), 'r-')
+        
+        #p0 = np.array([max(temps), np.median(rads), 1, min(temps)])
+        #popt, pcov = curve_fit(sigmoid, rads, temps, p0, method='lm')
+        #plt.plot(fine_rb, sigmoid(fine_rb, *popt), 'r-')
+        
+        
+    
+
+
+
