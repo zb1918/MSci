@@ -195,7 +195,7 @@ for i in range(128):
 """"""
 #%%
 """
-contour plot of velocity on cartesian grid
+contour plot of angukar velocity on cartesian grid
 
 """
 plt.contourf(X, Z, vthb, 64, cmap = "BuPu")

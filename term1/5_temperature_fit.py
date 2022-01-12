@@ -1,8 +1,5 @@
 """
-contour plot on radial grid of 
-log(T) as a function of theta and height
-height in units of r0
-
+fitting function for temperature
 """
 
 import os

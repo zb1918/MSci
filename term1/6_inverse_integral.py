@@ -6,7 +6,7 @@ from scipy.io import loadmat
 from scipy.interpolate import interp1d as interp
 
 plt.style.use("cool-style.mplstyle")
-pl_color = 'slategrey'
+pl_color = 'moccasin'
 #%%
 
 """
@@ -68,8 +68,7 @@ determine point at which radius will begin
 
 #%%
 """
-streamlines for interpolated velocity or log(velocity) matrices
-correction for valid streamlines included
+streamlines for interpolated velocities solving dr/dtheta
 radial distances scaled
 
 """
@@ -78,9 +77,10 @@ fig, ax = plt.subplots()
 
 
 #----------------------fine grid for post-interpolation-----------------------#
-radii = np.linspace(1.04, rb_sc_max, 1)
+radii = np.linspace(1., rb_sc_max, 1)
+radii = np.array([1, 1.2, 1.3, 1.4, 1.5])
 rspan = [radii[0], radii[-1]]
-thetas = np.linspace(0, 0.1, 100)*np.pi
+thetas = np.linspace(0.35, 0.8, 100)*np.pi
 tspan = [thetas[0], thetas[-1]]
 
 #----------------------interpolating coarse grid points-----------------------#
@@ -101,7 +101,8 @@ plt.show()
 
 #%%
 """
-contour plot of temperature on cartesian grid
+contour plot of angular velocity on cartesian grid
+shows negative areas via given levels
 
 """
 

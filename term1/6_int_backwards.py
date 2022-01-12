@@ -1,10 +1,9 @@
 """
 simulation streamlines 
 include event detection (i.e. when the integration goes back into planet)
-and corrects during event detection such that intial conditions are flipped
-(radii and rspan)
-"""
+and corrects during event detection such that inversion of RHS is solved
 
+"""
 
 import numpy as np
 from scipy.integrate import solve_ivp as ivp
@@ -60,7 +59,7 @@ def event(t, y, fr, ft):
 
 event.terminal = True
 
-
+#thetas is number of initial pts
 thetas = np.linspace(0, 0.5, 30)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
@@ -69,7 +68,7 @@ t_stops = []
 r_pl = 1.04
 radii = []
 for i in range(len(rb_sc)-1):
-    subr = np.linspace(rb_sc[i], rb_sc[i+1], 5)
+    subr = np.linspace(rb_sc[i], rb_sc[i+1], 10)
     radii.append(subr[0:4])
 radii = np.array(radii)
 radii = radii.flatten()
@@ -129,5 +128,8 @@ for theta in thetas:
 planet = plt.Circle((0, 0), 1, color=pl_color)
 ax.add_patch(planet)
 plt.show()
+
+#%%
+
 
 

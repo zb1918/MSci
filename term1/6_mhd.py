@@ -143,3 +143,6 @@ ax.add_patch(planet)
 
 #plt.savefig("images/velocity.pdf", format="pdf")
 plt.show()
+
+#%%
+
