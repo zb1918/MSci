@@ -98,8 +98,8 @@ get_sign_ut = inter.RectBivariateSpline(radii.T[0],thb.T[0],sign_ut,kx=1,ky=1)
 ### IMPORT STREAMLINES FROM THE PREVIOUS THING ###
 
 ### Import as pandas dataframes ###
-r_df = pd.read_csv(r'C:\Users\simon\Documents\GitHub\MSci\SimoneCode\stream_r_005.csv',header=None)
-th_df = pd.read_csv(r'C:\Users\simon\Documents\GitHub\MSci\SimoneCode\stream_th_005.csv',header=None)
+r_df = pd.read_csv('SimoneCode\stream_r_005.csv',header=None)
+th_df = pd.read_csv('SimoneCode\stream_th_005.csv',header=None)
 
 ### Make a list from the dataframes ###
 stream_r = []
