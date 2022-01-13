@@ -60,7 +60,7 @@ fig, ax = plt.subplots()
 
 radii = np.linspace(1.04, rb_sc_max, 500)
 rspan = [radii[0], radii[-1]]
-thetas = np.linspace(0, 0.75, 30)*np.pi
+#thetas = np.linspace(0, 0.75, 30)*np.pi
 
 f_r = slm.rbs(rb_sc, thb, Br)
 f_t = slm.rbs(rb_sc, thb, Bt)
@@ -71,7 +71,7 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 0.5, 100)*np.pi
+thetas = np.linspace(0, 1, 200)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -133,15 +133,16 @@ for theta in thetas:
         sol_y = sol_y.flatten()
         sol_t = sol_t.flatten()      
     
-    if sol_t[-1] != sol_t[0]: # if the streamline doesnt 'close'
+    #if sol_t[-1] != sol_t[0]: # if the streamline doesnt 'close'
+    if 1 == 1:
         slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
         plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
         
         sols_t.append(sol_t)
         sols_y.append(sol_y)
 
-#np.savetxt('term1/sols/mhd_sol_t.csv', sols_t, delimiter=',')
-#np.savetxt('term1/sols/mhd_sol_y.csv', sols_y, delimiter=',')
+np.savetxt('term1/sols/mhd_sol_t.csv', sols_t, delimiter=',')
+np.savetxt('term1/sols/mhd_sol_y.csv', sols_y, delimiter=',')
 
 
 plt.show()

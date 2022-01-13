@@ -120,12 +120,12 @@ for stream_no in range(0, len(f1.T) - 1):
 #for stream_no in range(0, 1):
     sol_y = f1.T[stream_no]
     sol_t = f2.T[stream_no]
-    
+    print(stream_no)
     #print(sol_t[-1], sol_y[10])
     
     # plot the streamline investigated:
-    #slm.plot_cart(sol_t, sol_y)
-    
+    slm.plot_cart(sol_t, sol_y)
+    plt.show()
     dr = np.diff(sol_t)
     dt = np.diff(sol_y)
 
@@ -168,3 +168,4 @@ for stream_no in range(0, len(f1.T) - 1):
         sol_n3.append(sol_f.y[1])
     
     plt.plot(sol_l, sol_n3)
+    plt.show()
