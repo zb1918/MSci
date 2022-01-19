@@ -10,6 +10,7 @@ import math
 from scipy.io import loadmat
 from scipy import interpolate as inter
 from scipy.integrate import solve_ivp as ivp
+from scipy.spatial import Delaunay
 
 #%%
 ### WILL INTERPOLATE ALL QUANTITIES
@@ -143,7 +144,7 @@ get_r = []
 get_th = []
 for i in range(len(stream_l)):
     int_r = inter.interp1d(stream_l[i]*rb[0], stream_r[i]*rb[0])
-    int_th = inter.interp1d(stream_l[i]*rb[0], stream_th[i]*rb[0])
+    int_th = inter.interp1d(stream_l[i]*rb[0], stream_th[i])
     
     get_r.append(int_r)
     get_th.append(int_th)
@@ -158,7 +159,7 @@ def get_rhs(l,f,i):           # need to find an expression for r and theta from 
     i = index of the streamline we are considering
     '''
     r = get_r[i](l)/rb[0]
-    t = get_th[i](l)/rb[0]
+    t = get_th[i](l)
     n_e = get_ne(r,t,grid=False)
     n_0 = get_n0(r,t,grid=False)
     a_1 = a1(r,t)
@@ -189,22 +190,49 @@ for i in range(len(stream_l)):
     l0 = (stream_l[i][0],stream_l[i][-j])*rb[0]  
      
     f0 = np.array([1,0])
-    sol_f = ivp(get_rhs, l0, f0, method='LSODA',args=[i],t_eval=stream_l[i]*rb[0])
-    print(i)
+    sol_f = ivp(get_rhs, l0, f0, method='LSODA',args=[i],t_eval=stream_l[i]*rb[0],\
+                atol=1e-12,rtol=1e-6)
+    #print(i)
     
     f1.append(sol_f.y[0])
     f3.append(sol_f.y[1])
     l_sol.append(sol_f.t)
 
 #%%
-
-for i in range(len(stream_r)):
-    plt.plot(stream_r[i]*np.sin(stream_th[i]),stream_r[i]*np.cos(stream_th[i]),'r')
+for i in range(len(l_sol)):
+    plt.plot(l_sol[i],f3[i])
     
-plt.contourf(X_fine,Z_fine,10**get_log_u(rax_fine,tax_fine,grid=False).T,200)
-plt.colorbar()
+#%%
+### FIND DATA POINTS IN r-theta AND USE DELAUNEY TRIANGULATION ###
+r_sol = []
+th_sol = []
+
+for i in range(len(l_sol)): 
+    r_sol.append(get_r[i](l_sol[i]))
+    th_sol.append(get_th[i](l_sol[i]))
+
+# input of Delauney are coordinate points in the form (r,th)
+
+points_list = []
+for i in range(len(r_sol)):
+    for j in range(len(r_sol[i])):
+        coord = [r_sol[i][j]/rb[0][0],th_sol[i][j]]
+        points_list.append(coord)
+        
+points = np.asarray(points_list)
+tri = Delaunay(points)   # does the triangulation
+
+## put values of f3 in a single list s.t. they correspond to their coordinates
+f3_list = []
+for i in range(len(f3)):
+    for j in range(len(f3[i])):
+        frac = f3[i][j]
+        f3_list.append(frac)
+f3_values = np.asarray(f3_list)
+
+get_f3 = inter.LinearNDInterpolator(tri,f3_values)
 
 #%%
 
-for i in range(len(stream_r)):
-    plt.plot(l_sol[i],f3[i])
+plt.contourf(X,Z,get_f3(rax,tax).T,200)
+plt.colorbar()

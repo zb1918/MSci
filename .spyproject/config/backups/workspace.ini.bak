@@ -8,5 +8,5 @@ recent_files = ['SimoneCode\\Zahra_stream_solvers.py', 'SimoneCode\\Zahra_stream
 
 [main]
 version = 0.2.0
-recent_files = ['SimoneCode\\JamesSim_test.py', 'SimoneCode\\int_backwards_attempt.py', 'SimoneCode\\solve_ivp_coupled_ode.py']
+recent_files = ['SimoneCode\\JamesSim_test.py', 'SimoneCode\\int_backwards_attempt.py', 'SimoneCode\\solve_ivp_coupled_ode.py', 'SimoneCode\\HeliumFraction_hydro.py']
 
