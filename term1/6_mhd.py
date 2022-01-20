@@ -4,9 +4,8 @@ Created on Wed Dec 15 14:12:07 2021
 
 @author: zaza
 """
-
+import os
 import numpy as np
-import scipy as sc
 from matplotlib import pyplot as plt
 from scipy.io import loadmat
 import stream_solvers as slm
@@ -17,6 +16,12 @@ plt.style.use("cool-style.mplstyle")
 pl_color = 'blue'
 
 MHD_sim = loadmat("term1/mhd_sim.mat")
+
+if os.path.exists('term1/sols/mhd_sol_t.npy'):
+    os.remove('term1/sols/mhd_sol_t.npy')
+    
+if os.path.exists('term1/sols/mhd_sol_y.npy'):
+    os.remove('term1/sols/mhd_sol_y.npy')
 
 
 rb = MHD_sim['r']
@@ -66,12 +71,12 @@ f_r = slm.rbs(rb_sc, thb, Br)
 f_t = slm.rbs(rb_sc, thb, Bt)
 
 def event(t, y, fr, ft):
-    return fr(t, y)
+    return fr(t, y) 
 
 event.terminal = True
 
 
-thetas = np.linspace(0, 1, 200)*np.pi
+thetas = np.linspace(0, 1, 100)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -104,7 +109,8 @@ for theta in thetas:
     rspan = [t_eval[0], t_eval[-1]]
     
     
-    sol = ivp(slm.dydt_rbs, rspan, [theta], t_eval = t_eval, args = (f_r, f_t), events = (event))
+    sol = ivp(slm.dydt_rbs, rspan, [theta], t_eval = t_eval,
+              args = (f_r, f_t), events = (event), atol = 1e-14, rtol = 1e-8)
     sol_y = np.append(sol_y, sol.y[0])
     sol_t = np.append(sol_t, sol.t)
     sol_y = sol_y.flatten()
@@ -124,7 +130,8 @@ for theta in thetas:
         t_eval = t_eval[::-1 * int(event.direction)]
         rspan = [t_eval[0], t_eval[-1]]
 
-        sol = ivp(slm.dydt_rbs, rspan, [last_y], t_eval = t_eval, args = (f_r, f_t), events = (event))
+        sol = ivp(slm.dydt_rbs, rspan, [last_y], t_eval = t_eval,
+                  args = (f_r, f_t), events = (event), atol = 1e-14, rtol = 1e-8)
         sol_y = np.append(sol_y, sol.y[0])
         sol_t = np.append(sol_t, sol.t)
         
@@ -140,9 +147,15 @@ for theta in thetas:
         
         sols_t.append(sol_t)
         sols_y.append(sol_y)
+print('success')
+sols_t = np.array(sols_t, dtype = 'object')    
+sols_y = np.array(sols_y, dtype = 'object')    
 
-np.savetxt('term1/sols/mhd_sol_t.csv', sols_t, delimiter=',')
-np.savetxt('term1/sols/mhd_sol_y.csv', sols_y, delimiter=',')
+file_t = 'term1/sols/mhd_sol_t.npy'
+file_y = 'term1/sols/mhd_sol_y.npy'
+
+np.save(file_t, sols_t, allow_pickle = True)
+np.save(file_y, sols_y, allow_pickle = True)
 
 
 plt.show()
@@ -153,7 +166,3 @@ ax.add_patch(planet)
 
 #plt.savefig("images/velocity.pdf", format="pdf")
 plt.show()
-
-#%%
-
- 

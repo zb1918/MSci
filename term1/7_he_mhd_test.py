@@ -27,7 +27,7 @@ thb = mhd_sim['th']                 #1D array of theta for grid
 rb = rb.T[0]
 rb_sc = rb/abs(rb[0])
 rb_sc_max = rb_sc[-1]
-thb = thb.T[0]
+thb = thb.T[0] 
 
 X = np.outer(rb_sc, np.sin(thb))
 Z = np.outer(rb_sc, np.cos(thb))
