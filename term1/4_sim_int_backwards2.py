@@ -37,6 +37,9 @@ thb = thb.T[0]              # 1D array of angles
 #----------------------------extracting from .MAT file------------------------#
 vrb = hydro_sim['vr']
 vthb = hydro_sim['vth']
+D = hydro_sim['D']
+U = hydro_sim['U']
+ne = hydro_sim['ne']
 
 
 X = np.outer(rb_sc,np.sin(thb)) # meshgrid of X coordinates
@@ -139,8 +142,8 @@ for theta in thetas:
     slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
     plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
     
-sols_t = np.array(sols_t, dtype = 'object')    
-sols_y = np.array(sols_y, dtype = 'object')    
+sols_t = np.array(sols_t)    
+sols_y = np.array(sols_y)    
 
 file_t = 'term1/sols/hyd_sol_t.npy'
 file_y = 'term1/sols/hyd_sol_y.npy'

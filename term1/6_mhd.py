@@ -61,9 +61,10 @@ c = plt.colorbar()
 c.set_label(r"$\log_{10}$(Br) [g/cm3]")
 
 #%%
-fig, ax = plt.subplots()     
-
-radii = np.linspace(1.04, rb_sc_max, 500)
+fig, ax = plt.subplots()   
+  
+r_pl = 1.04
+radii = np.linspace(r_pl, rb_sc_max, 500)
 rspan = [radii[0], radii[-1]]
 #thetas = np.linspace(0, 0.75, 30)*np.pi
 
@@ -76,12 +77,11 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 1, 100)*np.pi
+thetas = np.linspace(0, 0.5, 100)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
 
-r_pl = 1.04
 radii = []
 for i in range(len(rb_sc)-1):
     subr = np.linspace(rb_sc[i], rb_sc[i+1], 5)
@@ -93,8 +93,10 @@ radii = np.array([r for r in radii if r > r_pl])
 
 sols_y = []
 sols_t = []
-
+#thetas = np.array([1.5549296972313118])
 for theta in thetas:
+    print(theta)
+
     sol_y = np.array([])
     sol_t = np.array([])
     num_events = 0
@@ -103,20 +105,25 @@ for theta in thetas:
     rspan = [t_eval[0], t_eval[-1]]
     event.direction = np.array(f_r(t_eval[0], theta) / abs(f_r(t_eval[0], theta))) * -1
     event.direction = event.direction.item()
+    
+    print(event.direction)
+
     if len(sol_y) > 0:
+        print("what is the point of this test")
         t_eval = [r for r in radii if r * event.direction > sol_t[-1] * event.direction]
     t_eval = t_eval[::-1 * int(event.direction)]
     rspan = [t_eval[0], t_eval[-1]]
+    print(rspan)
     
-    
+    #intital solution until the event is triggered (negative radial velocity)
     sol = ivp(slm.dydt_rbs, rspan, [theta], t_eval = t_eval,
-              args = (f_r, f_t), events = (event), atol = 1e-14, rtol = 1e-8)
+              args = (f_r, f_t), events = (event), atol = 1e-12, rtol = 1e-6)
+    
     sol_y = np.append(sol_y, sol.y[0])
     sol_t = np.append(sol_t, sol.t)
     sol_y = sol_y.flatten()
     sol_t = sol_t.flatten()
       
-    
     while sol.status != 0:
         num_events +=1
         last_y = np.array(sol.y_events).item()
@@ -131,7 +138,9 @@ for theta in thetas:
         rspan = [t_eval[0], t_eval[-1]]
 
         sol = ivp(slm.dydt_rbs, rspan, [last_y], t_eval = t_eval,
-                  args = (f_r, f_t), events = (event), atol = 1e-14, rtol = 1e-8)
+                  args = (f_r, f_t), events = (event)
+                  , atol = 1e-12, rtol = 1e-6
+                  )
         sol_y = np.append(sol_y, sol.y[0])
         sol_t = np.append(sol_t, sol.t)
         
@@ -140,16 +149,19 @@ for theta in thetas:
         sol_y = sol_y.flatten()
         sol_t = sol_t.flatten()      
     
-    #if sol_t[-1] != sol_t[0]: # if the streamline doesnt 'close'
-    if 1 == 1:
+    if sol_t[-1] != sol_t[0]: # if the streamline doesnt 'close'
+    #if 1 == 1:
         slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
         plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
         
         sols_t.append(sol_t)
         sols_y.append(sol_y)
+        
+        
 print('success')
-sols_t = np.array(sols_t, dtype = 'object')    
-sols_y = np.array(sols_y, dtype = 'object')    
+#%%
+sols_t = np.array(sols_t)    
+sols_y = np.array(sols_y)    
 
 file_t = 'term1/sols/mhd_sol_t.npy'
 file_y = 'term1/sols/mhd_sol_y.npy'

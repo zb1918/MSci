@@ -46,7 +46,7 @@ def cart_x(r,theta):
 
 def plot_cart(r, theta, color = "navy", lw = 1, ls = 'solid'):
     plt.plot(cart_x(r, theta), cart_y(r, theta), color = color, lw = lw, ls = ls)
-
+    
 def plot_mult(t, y, color = "navy", lw = 1, ls = 'solid'):
     
     for ys in range(len(y)):

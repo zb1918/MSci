@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan 13 11:36:22 2022
-
-@author: zaza
+imports arrays of streamliens  
+solves the helium fractions along each streamline
 """
 
 import numpy as np
@@ -13,16 +12,67 @@ from scipy.io import loadmat
 from scipy.interpolate import interp1d as interp
 from scipy.integrate import solve_ivp as ivp
 
+pl_color = 'moccasin'
+
+
+#%%
+
+'''
+analysing hydro lines
+
+'''
+
+hydro_sim = loadmat("term1/sims/pure_HD.mat")
+file_y = np.load("term1/sols/hyd_sol_y.npy", allow_pickle = True)
+file_t = np.load("term1/sols/hyd_sol_t.npy", allow_pickle = True)
+str_color = 'blue'
+#----------------------------scaling radial distances-------------------------#
+rb = hydro_sim['r']             
+rb = rb.T[0]                # 1D array of radial distances
+rb_sc = rb/rb[0]            # 1D array of radial distances normalised: r[0] = 1
+rb_max = rb[-1]             # upper bound for radial distance 
+rb_sc_max = rb_sc[-1]       # upper bound for radial distance normalised 
+
+thb = hydro_sim['th']
+thb = thb.T[0]              # 1D array of angles
+
+#----------------------------extracting from .MAT file------------------------#
+vrb = hydro_sim['vr']
+vthb = hydro_sim['vth']
+u = np.sqrt((vrb**2) + (vthb**2))   # |u|
+
+D = hydro_sim['D']
+U = hydro_sim['U']
+Xe = hydro_sim['ne']
+n = D / (1.00784 * 1.66e-24)        # number density
+ne = n * Xe                         # electron number density
+Xh = 1 - Xe                         # fraction of non ionised hydrogen
+n0 = n * Xh                         # neutral hydrogen number density
+
+X = np.outer(rb_sc,np.sin(thb)) # meshgrid of X coordinates
+Z = np.outer(rb_sc,np.cos(thb)) # meshgrid of Z coordinates
+
+#----------------------interpolating coarse grid points-----------------------#
+f_r = slm.rbs(rb_sc, thb, vrb)
+f_t = slm.rbs(rb_sc, thb, vthb)
+f_u = slm.rbs(rb_sc, thb, u)
+f_ne = slm.rbs(rb_sc, thb, ne)
+f_n0 = slm.rbs(rb_sc, thb, n0)
+
+#%%
+
+'''
+analysing mhd lines
+
+'''
+
 mhd_sim = loadmat("term1/mhd_sim.mat")
+file_y = np.load("term1/sols/mhd_sol_y.npy", allow_pickle = True)
+file_t = np.load("term1/sols/mhd_sol_t.npy", allow_pickle = True)
+str_color = 'red'
 
-stream_no = 20
-
-
-f1 = np.loadtxt("term1/sols/mhd_sol_y.csv", dtype = 'f', delimiter = ',', unpack = True)
-f2 = np.loadtxt("term1/sols/mhd_sol_t.csv", dtype = 'f', delimiter = ',', unpack = True)
-
-rb = mhd_sim['r']                   #1D array of radius for grid
-thb = mhd_sim['th']                 #1D array of theta for grid
+rb = mhd_sim['r']                   # 1D array of radius for grid
+thb = mhd_sim['th']                 # 1D array of theta for grid
 
 rb = rb.T[0]
 rb_sc = rb/abs(rb[0])
@@ -41,7 +91,7 @@ vthb = mhd_sim['v2']                # u_theta
 vc = mhd_sim['v3']
 u = np.sqrt((vrb**2) + (vthb**2))   # |u|
 
-D = mhd_sim['rho']                    # mass density
+D = mhd_sim['rho']                  # mass density
 n = D / (1.00784 * 1.66e-24)        # number density
 
 U = mhd_sim['U']                    # internal energy pu volume
@@ -51,6 +101,7 @@ ne = n * Xe                         # electron number density
 Xh = 1 - Xe                         # fraction of non ionised hydrogen
 n0 = n * Xh                         # neutral hydrogen number density
 
+#----------------------interpolating coarse grid points-----------------------#
 f_r = slm.rbs(rb_sc, thb, vrb)
 f_t = slm.rbs(rb_sc, thb, vthb)
 f_Br = slm.rbs(rb_sc, thb, Br)
@@ -59,7 +110,7 @@ f_u = slm.rbs(rb_sc, thb, u)
 f_ne = slm.rbs(rb_sc, thb, ne)
 f_n0 = slm.rbs(rb_sc, thb, n0)
 
-
+#%%
 
 #---------------------------constants in cgs----------------------------------#
 H_molecule = 1.00784        # mass of H in a.m.u.
@@ -106,7 +157,7 @@ for r in sol_t:
 #plt.plot(sol_t, ne_i)
 
 '''
-
+#%%
 def rhs(l, f, u, ne, n0):
     f1 = f[0]
     f3 = f[1]
@@ -116,56 +167,95 @@ def rhs(l, f, u, ne, n0):
     return g
     
 
-for stream_no in range(0, len(f1.T) - 1):
+for stream_no in range(0, len(file_y) - 23):
 #for stream_no in range(0, 1):
-    sol_y = f1.T[stream_no]
-    sol_t = f2.T[stream_no]
-    print(stream_no)
+    sol_y = np.array(file_y[stream_no]) # thetas
+    sol_t = np.array(file_t[stream_no]) # radial distances
+    
+    print(stream_no + 1, '/', len(file_t))
     #print(sol_t[-1], sol_y[10])
+    '''
     
     # plot the streamline investigated:
+    fig, ax = plt.subplots()     
     slm.plot_cart(sol_t, sol_y)
+    planet = plt.Circle((0, 0), 1, color=pl_color)
+    ax.add_patch(planet)
     plt.show()
+    '''
+    
+    ###########################################################################    
+    # generating arc length array (l) along one streamline
     dr = np.diff(sol_t)
     dt = np.diff(sol_y)
+    
+    # inflow streamlines have point at which dt = 0; fixed with following lines
+    zero_pt = np.where(dt == 0)[0] # where the zero point actually occurs
+    dr = np.delete(dr, zero_pt)
+    dt = np.delete(dt, zero_pt)
+    sol_t = np.delete(sol_t, zero_pt)
+    sol_y = np.delete(sol_y, zero_pt)
 
     dr_dt = np.divide(dr, dt)
     
+    # initial deltas should be zero
     dr = np.insert(dr, 0, 0)
     dt = np.insert(dt, 0, 0)
     dr_dt = np.insert(dr_dt, 0, 0)
     
-    dl = np.absolute(np.sqrt(sol_t**2 + dr_dt**2)*dt)
-    l = np.cumsum(dl)
+
     
+    # arc length formula
+    dl = np.absolute(np.sqrt(sol_t**2 + dr_dt**2)*dt)
+    l = np.cumsum(dl) # cumulative sum to generate arc length array
+    ###########################################################################    
+
+    
+    # interpolate to obtain r and theta (t and y) as functions of arc length
     f_r = interp(l, sol_t)
     f_t = interp(l, sol_y)
     
+    # reset values
     ne_1 = 0
     n0_i = 0
     u_i = 0
-    
+    # span of integration (from beginning to end of streamline)
     l0 = [l[0], l[-1]]
     
-    sol_l = []
-    sol_n1 = []
-    sol_n3 = []
+    sol_l = []  # arc lengths of streamline at which n1 and n3 determined
+    sol_n1 = [] # He singlet population along streamline
+    sol_n3 = [] # He triplet population along streamline
     
-    for li in l:
+    ###########################################################################
+    # making arc length array finer
+    arc_l = []
+    for i in range(len(l) - 1):
+    #for i in range(200): # cutting at arbitrary length
+        subl = np.linspace(l[i], l[i+1], 5)
+        arc_l.append(subl[0:4])
+    arc_l = np.array(arc_l)
+    arc_l = arc_l.flatten()
+    ###########################################################################
+    
+    for li in arc_l: # at each point along length of streamline
         r = f_r(li).item()
         t = f_t(li).item()
         
         ne_i = f_ne(r, t).item()
         n0_i = f_n0(r, t).item()
-        u_i = f_u(r, t).item()
+        u_i = np.absolute(f_u(r, t).item())
         
         sol_f = ivp(rhs, l0, [1, 0], method = 'LSODA',
                     args = (u_i, ne_i, n0_i), t_eval = [li],
-                    rtol = 1e-12, atol = 1e-4)
-        
+                    rtol = 1e-13, atol = 1e-16)
+
         sol_l.append(sol_f.t)
         sol_n1.append(sol_f.y[0])
         sol_n3.append(sol_f.y[1])
     
-    plt.plot(sol_l, sol_n3)
+    plt.plot(sol_l, sol_n3, color = str_color)
+    plt.ylabel("fraction in triplet state")
+    plt.xlabel("length along streamline (r_pl)")
     plt.show()
+    
+    
