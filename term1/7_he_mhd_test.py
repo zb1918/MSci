@@ -22,7 +22,7 @@ analysing hydro lines
 
 '''
 
-hydro_sim = loadmat("term1/sims/pure_HD.mat")
+hydro_sim = loadmat("term1/sims/hyd_sim.mat")
 file_y = np.load("term1/sols/hyd_sol_y.npy", allow_pickle = True)
 file_t = np.load("term1/sols/hyd_sol_t.npy", allow_pickle = True)
 str_color = 'blue'
@@ -66,7 +66,7 @@ analysing mhd lines
 
 '''
 
-mhd_sim = loadmat("term1/mhd_sim.mat")
+mhd_sim = loadmat("term1/sims/mhd_sim.mat")
 file_y = np.load("term1/sols/mhd_sol_y.npy", allow_pickle = True)
 file_t = np.load("term1/sols/mhd_sol_t.npy", allow_pickle = True)
 str_color = 'red'
