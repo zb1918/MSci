@@ -17,13 +17,8 @@ import scipy as sc
 plt.style.use("cool-style.mplstyle")
 pl_color = 'blue'
 
-MHD_sim = loadmat("term1/mhd_sim.mat")
+MHD_sim = loadmat("term1/sims/mhd_sim.mat")
 
-if os.path.exists('term1/sols/mhd_sol_t.npy'):
-    os.remove('term1/sols/mhd_sol_t.npy')
-    
-if os.path.exists('term1/sols/mhd_sol_y.npy'):
-    os.remove('term1/sols/mhd_sol_y.npy')
 
 
 rb = MHD_sim['r']
@@ -110,9 +105,9 @@ t_eval = radii
 err = ivp(slm.dydt_rbs, rspan, [theta], t_eval = t_eval,
           args = (f_r, f_t), events = (event), atol = 1e-13, rtol = 1e-8)
 if err.status == 1:
-    event.direction = 1
-    last_ang = err.y[0][-1]
-    last_rad = err.t[-1]
+    event.direction = -1
+    last_ang = err.y_events[0][0][0]
+    last_rad = err.t_events[0][0]
     plt.scatter(slm.cart_x(last_rad, last_ang), slm.cart_y(last_rad, last_ang))
     y0 = last_rad
     t_eval = np.linspace(last_ang, last_ang + 0.2, 100)

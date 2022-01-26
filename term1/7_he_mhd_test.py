@@ -283,7 +283,7 @@ ts = np.array(ts).flatten()
 points = [list(pair) for pair in zip(rs, ts)]
 
 tri = Delaunay(points)
-get_f3 = interpnd(tri, f3s)
+f_f3 = interpnd(tri, f3s)
 
-plt.contourf(X, Z, get_f3(rax, tax).T, 200, cmap = "BuPu")
+plt.contourf(X, Z, f_f3(rax, tax).T, 200, cmap = "BuPu")
 plt.colorbar()
