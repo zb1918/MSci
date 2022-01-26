@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['SimoneCode\\HeliumFraction_hydro.py', 'term1\\7_he_mhd_test.py', 'stream_solvers.py', 'term1\\4_sim_int_backwards2.py', 'term1\\6_mhd.py', 'term1\\debug.py']
+recent_files = ['term1\\7_he_mhd_test.py', 'stream_solvers.py', 'term1\\4_sim_int_backwards2.py', 'term1\\6_mhd.py']
 

@@ -10,7 +10,10 @@ from matplotlib import pyplot as plt
 import stream_solvers as slm
 from scipy.io import loadmat
 from scipy.interpolate import interp1d as interp
+from scipy.interpolate import LinearNDInterpolator as interpnd
 from scipy.integrate import solve_ivp as ivp
+from scipy.spatial import Delaunay
+import itertools
 
 pl_color = 'moccasin'
 
@@ -49,8 +52,9 @@ ne = n * Xe                         # electron number density
 Xh = 1 - Xe                         # fraction of non ionised hydrogen
 n0 = n * Xh                         # neutral hydrogen number density
 
-X = np.outer(rb_sc,np.sin(thb)) # meshgrid of X coordinates
-Z = np.outer(rb_sc,np.cos(thb)) # meshgrid of Z coordinates
+X = np.outer(rb_sc, np.sin(thb)) # meshgrid of X coordinates
+Z = np.outer(rb_sc, np.cos(thb)) # meshgrid of Z coordinates
+rax, tax = np.meshgrid(rb_sc, thb)
 
 #----------------------interpolating coarse grid points-----------------------#
 f_r = slm.rbs(rb_sc, thb, vrb)
@@ -81,6 +85,7 @@ thb = thb.T[0]
 
 X = np.outer(rb_sc, np.sin(thb))
 Z = np.outer(rb_sc, np.cos(thb))
+rax, tax = np.meshgrid(rb_sc, thb)
 
 Br = mhd_sim['B1']
 Bt = mhd_sim['B2']
@@ -157,6 +162,8 @@ for r in sol_t:
 #plt.plot(sol_t, ne_i)
 
 '''
+
+
 #%%
 def rhs(l, f, u, ne, n0):
     f1 = f[0]
@@ -165,9 +172,12 @@ def rhs(l, f, u, ne, n0):
     g2 = u**-1 * ((1- f1 - f3) * ne * a3 - f3 * A31 - f3 * F3 * np.exp(-t3) + f1 * ne * q13a - f3* ne * q31a - f3 * ne * q31b - f3 * n0 * Q31)
     g = [g1, g2]
     return g
-    
 
-for stream_no in range(0, len(file_y) - 23):
+
+rs = []
+ts = []    
+f3s = []
+for stream_no in range(0, len(file_y)): # one streamline at a time
 #for stream_no in range(0, 1):
     sol_y = np.array(file_y[stream_no]) # thetas
     sol_t = np.array(file_t[stream_no]) # radial distances
@@ -184,8 +194,8 @@ for stream_no in range(0, len(file_y) - 23):
     plt.show()
     '''
     
-    ###########################################################################    
-    # generating arc length array (l) along one streamline
+    #---------generating arc length array (l) along one streamline------------#    
+     
     dr = np.diff(sol_t)
     dt = np.diff(sol_y)
     
@@ -226,21 +236,26 @@ for stream_no in range(0, len(file_y) - 23):
     sol_n1 = [] # He singlet population along streamline
     sol_n3 = [] # He triplet population along streamline
     
-    ###########################################################################
-    # making arc length array finer
+    #---------------------making arc length array finer-----------------------#
+    # 
     arc_l = []
     for i in range(len(l) - 1):
     #for i in range(200): # cutting at arbitrary length
-        subl = np.linspace(l[i], l[i+1], 5)
+        subl = np.linspace(l[i], l[i + 1], 5) # last parameter = fineness
         arc_l.append(subl[0:4])
     arc_l = np.array(arc_l)
     arc_l = arc_l.flatten()
     ###########################################################################
     
+    stream_r = []
+    stream_t = []
     for li in arc_l: # at each point along length of streamline
         r = f_r(li).item()
         t = f_t(li).item()
         
+        stream_r.append(r)
+        stream_t.append(t)
+
         ne_i = f_ne(r, t).item()
         n0_i = f_n0(r, t).item()
         u_i = np.absolute(f_u(r, t).item())
@@ -252,10 +267,23 @@ for stream_no in range(0, len(file_y) - 23):
         sol_l.append(sol_f.t)
         sol_n1.append(sol_f.y[0])
         sol_n3.append(sol_f.y[1])
+        f3s.append(sol_f.y[1].item())
+    rs.append(stream_r)
+    ts.append(stream_t)
     
     plt.plot(sol_l, sol_n3, color = str_color)
     plt.ylabel("fraction in triplet state")
     plt.xlabel("length along streamline (r_pl)")
     plt.show()
     
-    
+rs = np.array(rs).flatten()
+ts = np.array(ts).flatten()    
+
+#%%
+points = [list(pair) for pair in zip(rs, ts)]
+
+tri = Delaunay(points)
+get_f3 = interpnd(tri, f3s)
+
+plt.contourf(X, Z, get_f3(rax, tax).T, 200, cmap = "BuPu")
+plt.colorbar()

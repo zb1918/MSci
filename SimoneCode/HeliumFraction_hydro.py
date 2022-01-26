@@ -99,8 +99,8 @@ get_sign_ut = inter.RectBivariateSpline(radii.T[0],thb.T[0],sign_ut,kx=1,ky=1)
 ### IMPORT STREAMLINES FROM THE PREVIOUS THING ###
 
 ### Import as pandas dataframes ###
-r_df = pd.read_csv('SimoneCode\stream_r_005.csv',header=None)
-th_df = pd.read_csv('SimoneCode\stream_th_005.csv',header=None)
+r_df = pd.read_csv('SimoneCode\stream_r_005.csv', header=None)
+th_df = pd.read_csv('SimoneCode\stream_th_005.csv', header=None)
 
 ### Make a list from the dataframes ###
 stream_r = []
@@ -183,6 +183,7 @@ f3 = []
 l_sol = []
 
 for i in range(len(stream_l)):
+    print(i, '/', len(stream_l))
     j = 1
     while math.isnan(stream_l[i][-j]) == True:
         j+=1
@@ -191,7 +192,7 @@ for i in range(len(stream_l)):
      
     f0 = np.array([1,0])
     sol_f = ivp(get_rhs, l0, f0, method='LSODA',args=[i],t_eval=stream_l[i]*rb[0],\
-                atol=1e-12,rtol=1e-6)
+                atol=1e-10,rtol=1e-5)
     #print(i)
     
     f1.append(sol_f.y[0])
