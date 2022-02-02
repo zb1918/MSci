@@ -15,7 +15,8 @@ def sigmoid(x, L, x0, k, b):
     y = L / (1 + np.exp(-k * (x - x0))) + b
     return (y)
 
-
+def flatten(t):
+    return [item for sublist in t for item in sublist]
 #----------------------functional forms of known streamlines------------------#
 def u_r(r, theta):
     """

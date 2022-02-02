@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import stream_solvers as slm
 from scipy.io import loadmat
 from scipy.interpolate import interp1d as interp
+import pickle
+
 
 plt.style.use("cool-style.mplstyle")
 pl_color = 'moccasin'
@@ -22,7 +24,10 @@ pl_color = 'moccasin'
 """
 extraction of data and physical calculations
 """
-hydro_sim = loadmat("term1/sims/pure_HD.mat") #extract pure_HD simulation
+hydro_sim = loadmat("term1/sims/hyd_sim.mat") #extract pure_HD simulation
+
+file_t = 'term1/sols/hyd_sol_t.p'
+file_y = 'term1/sols/hyd_sol_y.p'
 
 #----------------------------scaling radial distances-------------------------#
 rb = hydro_sim['r']             
@@ -65,7 +70,7 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 0.5, 50)*np.pi
+thetas = np.linspace(0, 0.5, 500)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -85,11 +90,11 @@ fig, ax = plt.subplots()
 sols_t = []
 sols_y = []
 
-if os.path.exists('term1/sols/hyd_sol_t.npy'):
-    os.remove('term1/sols/hyd_sol_t.npy')
+if os.path.exists(file_t):
+    os.remove(file_t)
     
-if os.path.exists('term1/sols/hyd_sol_y.npy'):
-    os.remove('term1/sols/hyd_sol_y.npy')
+if os.path.exists(file_y):
+    os.remove(file_y)
 
 
 for theta in thetas:
@@ -136,24 +141,31 @@ for theta in thetas:
         ''' '''
         
         sol_y = sol_y.flatten()
-        sol_t = sol_t.flatten()      
+        sol_t = sol_t.flatten()
+    if sol_t[0] > 2:
+        sol_t = np.flip(sol_t)
+        sol_y = np.flip(sol_y)
+        print("flipped!")
+        print(sol_t)
     sols_t.append(list(sol_t))    
     sols_y.append(list(sol_y))
     slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
     plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
-    
-sols_t = np.array(sols_t)    
-sols_y = np.array(sols_y)    
-
-file_t = 'term1/sols/hyd_sol_t.npy'
-file_y = 'term1/sols/hyd_sol_y.npy'
-
+'''    
+sols_t = np.array(sols_t, dtype = 'object')    
+sols_y = np.array(sols_y, dtype = 'object')    
 np.save(file_t, sols_t, allow_pickle = True)
 np.save(file_y, sols_y, allow_pickle = True)
+'''
 
 
-
-planet = plt.Circle((0, 0), 1, color=pl_color)
+with open(file_t, "wb") as ftp:   #Pickling
+    pickle.dump(sols_t, ftp)
+with open(file_y, "wb") as fyp:   #Pickling
+    pickle.dump(sols_y, fyp)
+    
+    
+planet = plt.Circle((0, 0), 1, color = pl_color)
 ax.add_patch(planet)
 plt.show()
 

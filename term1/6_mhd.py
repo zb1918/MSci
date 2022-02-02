@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Dec 15 14:12:07 2021
-
-@author: zaza
+creates and saves MHD streamlines
 """
 import os
 import numpy as np
@@ -10,18 +8,21 @@ from matplotlib import pyplot as plt
 from scipy.io import loadmat
 import stream_solvers as slm
 from scipy.integrate import solve_ivp as ivp
-
+import pickle
 
 plt.style.use("cool-style.mplstyle")
 pl_color = 'blue'
 
-MHD_sim = loadmat("term1/mhd_sim.mat")
+MHD_sim = loadmat("term1/sims/mhd_sim.mat")
 
-if os.path.exists('term1/sols/mhd_sol_t.npy'):
-    os.remove('term1/sols/mhd_sol_t.npy')
+file_t = 'term1/sols/mhd_sol_t.p'
+file_y = 'term1/sols/mhd_sol_y.p'
+
+if os.path.exists(file_t):
+    os.remove(file_t)
     
-if os.path.exists('term1/sols/mhd_sol_y.npy'):
-    os.remove('term1/sols/mhd_sol_y.npy')
+if os.path.exists(file_y):
+    os.remove(file_y)
 
 
 rb = MHD_sim['r']
@@ -55,8 +56,8 @@ c.set_label(r"$\log_{10}$(Density) [g/cm3]")
 
 
 #%%
-
-plt.contourf(X, Z, Br, 64, cmap = "BuPu", levels = [-6, -3, 0, 3, 6])
+# misc contour plot
+plt.contourf(X, Z, np.sign(Bt), 64, cmap = "BuPu")
 c = plt.colorbar()
 c.set_label(r"$\log_{10}$(Br) [g/cm3]")
 
@@ -77,7 +78,7 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 0.5, 100)*np.pi
+thetas = np.linspace(0, 1, 500)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -149,32 +150,43 @@ for theta in thetas:
         sol_y = sol_y.flatten()
         sol_t = sol_t.flatten()      
     
-    if sol_t[-1] != sol_t[0]: # if the streamline doesnt 'close'
+    if sol_t[-1] != sol_t[0]: # if the streamline doesn't 'close'
     #if 1 == 1:
         slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
         plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
         
         sols_t.append(sol_t)
         sols_y.append(sol_y)
+        plt.show()
         
-        
-print('success')
-#%%
-sols_t = np.array(sols_t)    
-sols_y = np.array(sols_y)    
-
-file_t = 'term1/sols/mhd_sol_t.npy'
-file_y = 'term1/sols/mhd_sol_y.npy'
-
-np.save(file_t, sols_t, allow_pickle = True)
-np.save(file_y, sols_y, allow_pickle = True)
-
-
-plt.show()
-
-                                                                                                                               
 planet = plt.Circle((0, 0), 1, color=pl_color)
 ax.add_patch(planet)
 
 #plt.savefig("images/velocity.pdf", format="pdf")
 plt.show()
+        
+print('success')
+#%%
+# np save # old method
+
+'''
+sols_t = np.array(sols_t)    
+sols_y = np.array(sols_y)    
+np.save(file_t, sols_t, allow_pickle = True)
+np.save(file_y, sols_y, allow_pickle = True)
+
+'''
+#%%
+# save streamlines to file
+
+with open(file_t, "wb") as ftp:   #Pickling
+    pickle.dump(sols_t, ftp)
+with open(file_y, "wb") as fyp:   #Pickling
+    pickle.dump(sols_y, fyp)
+'''    
+'''
+
+#%%
+
+with open(file_t, 'rb'):
+    sols_t = pickle.load(file_t)

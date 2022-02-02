@@ -122,8 +122,6 @@ r = err2.y[0]
 theta = err2.t
 plt.plot(slm.cart_x(r, theta), slm.cart_y(r, theta))
 
-#slm.plot_cart(-1*err2.y[0], -1*err2.t, color = 'green')
-#slm.plot_cart(err2.t, err2.y[0], color = 'red')
 
 planet = plt.Circle((0, 0), 1, color=pl_color)
 ax.add_patch(planet)
