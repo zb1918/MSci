@@ -57,17 +57,17 @@ Q31 = 5e-10                     # collisional de-exciration rate 2S tri -> 1S
 
 ### Physical quantites of the system ###
 F1 = ((10e3)/(24.6*1.602e-12))*(7.82e-18)  # photoionisation rate of 1S
-F3 = ((10e3)/(4.8*1.602e-12))*(4.84e-18)   # photoionisation rate of 2S triplet
+F3 = ((10e3)/(4.8*1.602e-12))*(5.48e-18)   # photoionisation rate of 2S triplet
 
 def a1(r,t):                               # recombination rate of 1S 
-    if get_T(r,t,grid=False) <= 5e3:
+    if get_T(r,t,grid=False) <= 1.5e3:
         a1 = 2.17e-13
     else:
         a1 = 1.54e-13
     return a1
 
 def a3(r,t):                               # recombination rate of 2S triplet 
-    if get_T(r,t,grid=False) <= 5e3:
+    if get_T(r,t,grid=False) <= 1.5e3:
         a3 = 1.97e-14
     else:
         a3 = 1.49e-14 
@@ -99,8 +99,8 @@ get_sign_ut = inter.RectBivariateSpline(radii.T[0],thb.T[0],sign_ut,kx=1,ky=1)
 ### IMPORT STREAMLINES FROM THE PREVIOUS THING ###
 
 ### Import as pandas dataframes ###
-r_df = pd.read_csv('SimoneCode\stream_r_005.csv',header=None)
-th_df = pd.read_csv('SimoneCode\stream_th_005.csv',header=None)
+r_df = pd.read_csv(r'C:\Users\simon\Documents\GitHub\MSci\SimoneCode\stream_r_001.csv',header=None)
+th_df = pd.read_csv(r'C:\Users\simon\Documents\GitHub\MSci\SimoneCode\stream_th_001.csv',header=None)
 
 ### Make a list from the dataframes ###
 stream_r = []
@@ -117,8 +117,8 @@ for i in range(len(stream_r)):
     diff_th = np.diff(stream_th[i])
     z = np.array([0])
     
-    dr_i = np.append(z,diff_r)
-    dth_i = np.append(z,diff_th)
+    dr_i = np.append(z,np.abs(diff_r))
+    dth_i = np.append(z,np.abs(diff_th))
     
     dr.append(dr_i)
     dth.append(dth_i)
@@ -128,7 +128,7 @@ for i in range(len(dr)):
     r = stream_r[i]
     th = stream_th[i]
     
-    dl_i = np.abs(dth[i]*np.sqrt((r**2)+((dr[i]/dth[i])**2)))
+    dl_i = np.sqrt(((r*dth[i])**2)+((dr[i])**2))
     stream_dl.append(dl_i)
     
 ### Define the cumulative sum of dl's ###
@@ -143,9 +143,10 @@ for i in range(len(stream_dl)):
 get_r = []
 get_th = []
 for i in range(len(stream_l)):
+    #plt.plot(stream_l[i],stream_r[i],'r')
     int_r = inter.interp1d(stream_l[i]*rb[0], stream_r[i]*rb[0])
     int_th = inter.interp1d(stream_l[i]*rb[0], stream_th[i])
-    
+        
     get_r.append(int_r)
     get_th.append(int_th)
     
@@ -189,7 +190,7 @@ for i in range(len(stream_l)):
         
     l0 = (stream_l[i][0],stream_l[i][-j])*rb[0]  
      
-    f0 = np.array([1,0])
+    f0 = np.array([1,1e-10])
     sol_f = ivp(get_rhs, l0, f0, method='LSODA',args=[i],t_eval=stream_l[i]*rb[0],\
                 atol=1e-12,rtol=1e-6)
     #print(i)
@@ -199,9 +200,32 @@ for i in range(len(stream_l)):
     l_sol.append(sol_f.t)
 
 #%%
-for i in range(len(l_sol)):
+'''
+num=1110  ## here fraction starts to fuck off
+
+fig1 = plt.figure()
+for i in range(num,1314):
     plt.plot(l_sol[i],f3[i])
     
+fig2 = plt.figure()
+for i in range(num):
+    plt.plot(l_sol[i],f3[i])
+    
+fig3  = plt.figure()
+for i in range(len(l_sol)):
+    if i < num:
+        #plt.plot(get_r[i](l_sol[i])*np.sin(get_th[i](l_sol[i]))/rb[0][0],\
+         #        get_r[i](l_sol[i])*np.cos(get_th[i](l_sol[i]))/rb[0][0],'r')
+        pass
+    else:
+        plt.plot(get_r[i](l_sol[i])*np.sin(get_th[i](l_sol[i]))/rb[0][0],\
+                 get_r[i](l_sol[i])*np.cos(get_th[i](l_sol[i]))/rb[0][0],'b')
+            
+plt.contourf(X,Z,T,200)
+circle1 = plt.Circle((0, 0), 1, color='k')
+plt.gca().add_patch(circle1)
+plt.colorbar()
+'''
 #%%
 ### FIND DATA POINTS IN r-theta AND USE DELAUNEY TRIANGULATION ###
 r_sol = []
@@ -211,28 +235,60 @@ for i in range(len(l_sol)):
     r_sol.append(get_r[i](l_sol[i]))
     th_sol.append(get_th[i](l_sol[i]))
 
-# input of Delauney are coordinate points in the form (r,th)
-
+# input of Delauney are coordinate points in the form (x,z) since we want cartesian grid
 points_list = []
 for i in range(len(r_sol)):
     for j in range(len(r_sol[i])):
-        coord = [r_sol[i][j]/rb[0][0],th_sol[i][j]]
-        points_list.append(coord)
+        rad = r_sol[i][j]/rb[0][0]
+        ang = th_sol[i][j]
         
+        coord = [rad*np.sin(ang),rad*np.cos(ang)]
+        points_list.append(coord)
+
 points = np.asarray(points_list)
-tri = Delaunay(points)   # does the triangulation
 
 ## put values of f3 in a single list s.t. they correspond to their coordinates
-f3_list = []
+## take the LOGARITHM 
+logf3_list = []
 for i in range(len(f3)):
     for j in range(len(f3[i])):
-        frac = f3[i][j]
-        f3_list.append(frac)
-f3_values = np.asarray(f3_list)
+        frac = np.log10(f3[i][j])
+        logf3_list.append(frac)
+logf3_values = np.asarray(logf3_list)
 
-get_f3 = inter.LinearNDInterpolator(tri,f3_values)
+np.save('f3_coords',points)
+np.save('logf3_values',logf3_values)
+
+tri = Delaunay(points)   # does the triangulation
+get_logf3 = inter.LinearNDInterpolator(tri,logf3_values)
 
 #%%
-
-plt.contourf(X,Z,get_f3(rax,tax).T,200)
+#for i in range(len(r_sol)-1):
+ #   plt.plot(r_sol[i]*np.sin(th_sol[i])/rb[0][0],r_sol[i]*np.cos(th_sol[i])/rb[0][0],'r')
+    
+plt.contourf(X,Z,10**get_logf3(X,Z),200)
+circle1 = plt.Circle((0, 0), 1, color='k')
+plt.gca().add_patch(circle1)
 plt.colorbar()
+
+#%%
+x = np.linspace(1.03,8,200)
+y = np.linspace(-14,14,500)
+
+x_grid, y_grid = np.meshgrid(x,y)
+
+fig1 = plt.figure()
+plt.contourf(x_grid,y_grid,10**get_logf3(x_grid,y_grid),200)
+plt.colorbar()
+
+#%%
+#################################################################################################
+###
+### TREAT AS A TWO LEVEL ATOM 2S-2P WITH TRANSITION AT 10830ANG
+### TRANSITION WIDTH GIVEN BY UNCERTAINTY BUT SHOULD BE LOW SINCE TIMELIFE IS LOW
+### MAXWELL-BOLTZMANN INTEGRATED PROJECTED ALONG LINE OF SIGHT GIVES GAUSSIAN IN THE REST FRAME
+### USE HELIUM MASS -> VELOCITIES SHOULD BE ~4 LOWER THAN AVERAGE THERMAL FOR H
+### GAUSSAIN PROFILE IS RED/BLUE SHIFTED BY BULK VELOCITY
+### COMPARE WIDTH, SHIFT AND HEIGHT OF THE LINE
+### 
+##################################################################################################

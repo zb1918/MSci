@@ -40,15 +40,16 @@ rax,tax = np.meshgrid(radii,thb)
 X = np.outer(radii,np.sin(thb))
 Z = np.outer(radii,np.cos(thb))
 
-thetas = np.arange(0,1.8,0.005)
+thetas = np.arange(0,1.8,0.001)
 theta_eval = np.array([thetas]).T
 
 #%%
+'''
 # solve ODE using interpolated functions ###
 def get_rhs(rad,theta,ur_interp,ut_interp):
     '''
-    Right hand side of our differential equation dtheta/dr = u_t/(r*u_r)
-    using the interpolated velocity functions 
+    #Right hand side of our differential equation dtheta/dr = u_t/(r*u_r)
+    #using the interpolated velocity functions 
     '''
     #Set up with grid=False to avoid calculations with a single radius matched
     #to more than one angle which we do not need since we are interested in
@@ -106,8 +107,13 @@ plt.gca().add_patch(circle1)
 plt.xlim(0,1.5)
 plt.ylim(-1.5,1.5)
 plt.show()
-
+'''
 #%%
+## Define starting radii as funtction of angles ##
+def r_min(theta):
+    rad_min = (theta/14.7)**2 + 1.025
+    return rad_min
+
 #define a finer grid inserting points in between the original radius array
 #the grid will stay finer near the planet
 #however cannot change initial radius this way  
@@ -120,6 +126,7 @@ for i in range(len(radii)-1):
     fine_r = np.insert(fine_r,4*i+3,radii.T[0][i]+(3*space[i]/4))   
 
 #%%
+'''
 #solve streamlines for the finer grid but with same radius     
 Radii_fine = []
 Angles_fine = []
@@ -218,8 +225,10 @@ for i in range(len(Radii_back)):
 
 def get_rhs_inv(theta,rad,ur_interp,ut_interp):
     '''
+    '''
     Right hand side of our differential equation dr/dtheta = (u_r*r)/u_t
     using the interpolated velocity functions 
+    '''
     '''
     #Set up with grid=False to avoid calculations with a single radius matched
     #to more than one angle which we do not need since we are interested in
@@ -275,7 +284,7 @@ for i in range(len(stream_r)):
 circle1 = plt.Circle((0, 0), 1, color='k')
 plt.gca().add_patch(circle1)
 
-
+'''
 #%%
 # interpolate values along a streamline
 
@@ -387,7 +396,7 @@ for i in range(len(theta_eval)):
         j += 1            
     fine_r_filter = fine_r_filter[j:]
     
-    print(i)
+    #print(i)
     
     sol_log = ivp(get_rhs_log, interval_r, theta_eval[i], args=(get_log_ur, get_log_ut,\
                   get_sign_ur,get_sign_ut), t_eval=fine_r_filter, events=[ur_zero_log])
@@ -532,8 +541,8 @@ stream_r = []     # r coords of streamlines
 stream_th = []    # theta coords of streamlines
 for i in range(len(Radii_log)-1):
     if len(Radii_log[i]) != 0 and Radii_log[i][-1] < 10:
-        arr_r = np.concatenate((Radii_log[i],Radii_night_log[c][0]))
-        arr_th = np.concatenate((Angles_log[i][0],Angles_night_log[c]))
+        arr_r = np.concatenate((Radii_log[i],Radii_night_log[c][0][1:]))
+        arr_th = np.concatenate((Angles_log[i][0],Angles_night_log[c][1:]))
         
         stream_r.append(arr_r)
         stream_th.append(arr_th)
@@ -555,36 +564,40 @@ stream_r_fix = []
 stream_th_fix = []
 
 for i in range(len(stream_r)-1):
-    if stream_r[i][-1] <= stream_r[i][-2]:  #streamlines that go back
-        if stream_r[i][-1] < stream_r[i+1][-1]: 
-            # if two streamlines that go back overlap once (not always the case)
-            # then the final radius of the ith streamline will be lower than the (i+1)th
-            pass
-        else:
-            stream_r_fix.append(stream_r[i])
-            stream_th_fix.append(stream_th[i])
+    if len(stream_r[i])!=0 and len(stream_r[i+1])!=0: 
+        if stream_r[i][-1] <= stream_r[i][-2]:  #streamlines that go back
+            if stream_r[i][-1] < stream_r[i+1][-1]: 
+                # if two streamlines that go back overlap once (not always the case)
+                # then the final radius of the ith streamline will be lower than the (i+1)th
+                pass
+            else:
+                stream_r_fix.append(stream_r[i])
+                stream_th_fix.append(stream_th[i])
+                
+        else:                                     # streamlines that don't go back
+            if stream_th[i][-1] > stream_th[i+1][-1]:
+                # if two streamlines that don't go back overlap once (not always the case)
+                # then the final theta of the ith streamline will be greater than the (i+1)th
+                pass
             
-    else:                                     # streamlines that don't go back
-        if stream_th[i][-1] > stream_th[i+1][-1]:
-            # if two streamlines that don't go back overlap once (not always the case)
-            # then the final theta of the ith streamline will be greater than the (i+1)th
-            pass
-            
-        else:
-            stream_r_fix.append(stream_r[i])
-            stream_th_fix.append(stream_th[i])               
+            else:
+                stream_r_fix.append(stream_r[i])
+                stream_th_fix.append(stream_th[i])   
+    else:
+        pass
                 
 #%%
 
 for i in range(len(stream_r_fix)):
     plt.plot(stream_r_fix[i], stream_th_fix[i],'r','.',lw = 0.5)
-   
-# create pandas dataframes to save the lists as cvs #
+    
+#%%   
+#create pandas dataframes to save the lists as cvs# 
 r_df = pd.DataFrame(stream_r_fix)
 th_df = pd.DataFrame(stream_th_fix)
 
-r_df.to_csv('stream_r_005.csv', index=False, header=False)
-th_df.to_csv('stream_th_005.csv', index=False, header=False)    
+r_df.to_csv('stream_r_001.csv', index=False, header=False)
+th_df.to_csv('stream_th_001.csv', index=False, header=False)    
 
 #%%
 ### PLOT ALL THE STREAMLINES ###      
