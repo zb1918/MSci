@@ -5,13 +5,16 @@ and corrects during event detection such that intial conditions are flipped
 (radii and rspan)
 """
 
-
+import os
+import os.path
 import numpy as np
 from scipy.integrate import solve_ivp as ivp
 import matplotlib.pyplot as plt
 import stream_solvers as slm
 from scipy.io import loadmat
 from scipy.interpolate import interp1d as interp
+import pickle
+
 
 plt.style.use("cool-style.mplstyle")
 pl_color = 'moccasin'
@@ -21,7 +24,10 @@ pl_color = 'moccasin'
 """
 extraction of data and physical calculations
 """
-hydro_sim = loadmat("term1/sims/pure_HD.mat") #extract pure_HD simulation
+hydro_sim = loadmat("term1/sims/hyd_sim.mat") #extract pure_HD simulation
+
+file_t = 'term1/sols/hyd_sol_t.p'
+file_y = 'term1/sols/hyd_sol_y.p'
 
 #----------------------------scaling radial distances-------------------------#
 rb = hydro_sim['r']             
@@ -36,6 +42,9 @@ thb = thb.T[0]              # 1D array of angles
 #----------------------------extracting from .MAT file------------------------#
 vrb = hydro_sim['vr']
 vthb = hydro_sim['vth']
+D = hydro_sim['D']
+U = hydro_sim['U']
+ne = hydro_sim['ne']
 
 
 X = np.outer(rb_sc,np.sin(thb)) # meshgrid of X coordinates
@@ -61,7 +70,7 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 0.5, 30)*np.pi
+thetas = np.linspace(0, 0.5, 500)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -77,6 +86,15 @@ radii = np.array([r for r in radii if r > r_pl])
 
 
 fig, ax = plt.subplots()     
+
+sols_t = []
+sols_y = []
+
+if os.path.exists(file_t):
+    os.remove(file_t)
+    
+if os.path.exists(file_y):
+    os.remove(file_y)
 
 
 for theta in thetas:
@@ -94,7 +112,8 @@ for theta in thetas:
     rspan = [t_eval[0], t_eval[-1]]
     
     
-    sol = ivp(slm.dydt_rbs, rspan, [theta], t_eval = t_eval, args = (f_r, f_t), events = (event))
+    sol = ivp(slm.dydt_rbs, rspan, [theta], t_eval = t_eval,
+              args = (f_r, f_t), events = (event), atol = 1e-12, rtol = 1e-8)
     sol_y = np.append(sol_y, sol.y[0])
     sol_t = np.append(sol_t, sol.t)
     sol_y = sol_y.flatten()
@@ -114,19 +133,39 @@ for theta in thetas:
         t_eval = t_eval[::-1 * int(event.direction)]
         rspan = [t_eval[0], t_eval[-1]]
 
-        sol = ivp(slm.dydt_rbs, rspan, [last_y], t_eval = t_eval, args = (f_r, f_t), events = (event))
+        sol = ivp(slm.dydt_rbs, rspan, [last_y], t_eval = t_eval,
+                  args = (f_r, f_t), events = (event), atol = 1e-12, rtol = 1e-8)
         sol_y = np.append(sol_y, sol.y[0])
         sol_t = np.append(sol_t, sol.t)
         
         ''' '''
         
         sol_y = sol_y.flatten()
-        sol_t = sol_t.flatten()      
-        
+        sol_t = sol_t.flatten()
+    if sol_t[0] > 2:
+        sol_t = np.flip(sol_t)
+        sol_y = np.flip(sol_y)
+        print("flipped!")
+        print(sol_t)
+    sols_t.append(list(sol_t))    
+    sols_y.append(list(sol_y))
     slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
     plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
+'''    
+sols_t = np.array(sols_t, dtype = 'object')    
+sols_y = np.array(sols_y, dtype = 'object')    
+np.save(file_t, sols_t, allow_pickle = True)
+np.save(file_y, sols_y, allow_pickle = True)
+'''
+
+
+with open(file_t, "wb") as ftp:   #Pickling
+    pickle.dump(sols_t, ftp)
+with open(file_y, "wb") as fyp:   #Pickling
+    pickle.dump(sols_y, fyp)
     
-planet = plt.Circle((0, 0), 1, color=pl_color)
+    
+planet = plt.Circle((0, 0), 1, color = pl_color)
 ax.add_patch(planet)
 plt.show()
 

@@ -15,7 +15,8 @@ def sigmoid(x, L, x0, k, b):
     y = L / (1 + np.exp(-k * (x - x0))) + b
     return (y)
 
-
+def flatten(t):
+    return [item for sublist in t for item in sublist]
 #----------------------functional forms of known streamlines------------------#
 def u_r(r, theta):
     """
@@ -46,7 +47,7 @@ def cart_x(r,theta):
 
 def plot_cart(r, theta, color = "navy", lw = 1, ls = 'solid'):
     plt.plot(cart_x(r, theta), cart_y(r, theta), color = color, lw = lw, ls = ls)
-
+    
 def plot_mult(t, y, color = "navy", lw = 1, ls = 'solid'):
     
     for ys in range(len(y)):
@@ -83,7 +84,7 @@ def dydt_rbs(r, t, fr, ft):
     #needed to be solved in the form dt/dr = u_t/(r*u_r)
     return ft(r, t, grid=False)/(fr(r, t, grid=False)*r)
 
-def dtdy_rbs(r, t, fr, ft):   
+def dtdy_rbs(t, r, fr, ft):   
     #finds the interpolated functions fr and ft evaluated at finer points r, t
     #and forms the differential equation 
     #needed to be solved in the form dt/dr = u_t/(r*u_r)
