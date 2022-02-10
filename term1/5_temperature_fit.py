@@ -25,7 +25,7 @@ fig, ax = plt.subplots(1, 2)
 """
 extraction of data and physical calculations
 """
-hydro_sim = loadmat("term1/sims/pure_HD.mat") #extract pure_HD simulation
+hydro_sim = loadmat("term1/sims/hyd_sim.mat") #extract pure_HD simulation
 
 #----------------------------scaling radial distances-------------------------#
 rb = hydro_sim['r']             

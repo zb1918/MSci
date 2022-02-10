@@ -379,18 +379,26 @@ f_f3 = interpnd(tri, f3_read)
 
 short_cart_X = [x[70:80] for x in cart_X]
 short_cart_Z = [z[70:80] for z in cart_Z]
-
+'''
 plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
 #plt.contourf(short_cart_X, short_cart_Z, f_f3(short_cart_X, short_cart_Z), 200, cmap = "BuPu")
 plt.colorbar()
+'''
+points = np.load('term1/output/f3_coords.npy')
+logf3_values = np.load('term1/output/logf3_values.npy')
 
+tri = Delaunay(points)   # does the triangulation
+get_logf3 = interpnd(tri,logf3_values)
+#%%
+plt.contourf(X, Z, (10**(get_logf3(X, Z)) - f_f3(X, Z))/(10**get_logf3(X, Z)), 200, cmap = "BuPu", levels = np.linspace(-10, 0, 100))
+plt.colorbar()
 
 #%%
 t_is = []
 ne_trips = []
 
 dx = (grid_x[1] - grid_x[0]) * rb[0]
-
+dz = (grid_z[1] - grid_z[0]) * rb[0]
 
 for i in range(len(grid_x)):
     ne_trip = []
@@ -403,11 +411,12 @@ for i in range(len(grid_x)):
         
         ne_i = f_ne(r_i, t_i).item()
         f3_i = f_f3(x, z).item()
-        ne_trip.append(f3_i * ne_i * dx)
+        ne_trip.append(f3_i * ne_i * dz)
         
         #t_is.append(f3_i)
     ne_trip = [ne for ne in ne_trip if ne > 0]
     ne_trips.append(np.sum(ne_trip))
 
 plt.plot(grid_x, np.log10(ne_trips))
-
+plt.ylabel("log10 of column density (cm^-2)")
+plt.xlabel("radius (cm)")

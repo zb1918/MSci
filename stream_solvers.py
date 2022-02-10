@@ -17,6 +17,16 @@ def sigmoid(x, L, x0, k, b):
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
+
+def make_fine(array, f):
+    fine_array = []
+    for i in range(len(array) - 1):
+        sub_arr = np.linspace(array[i], array[i + 1], f + 1) 
+        fine_array.append(sub_arr[0:f])
+    fine_array = np.array(fine_array)
+    fine_array = fine_array.flatten()
+    return fine_array
+    
 #----------------------functional forms of known streamlines------------------#
 def u_r(r, theta):
     """

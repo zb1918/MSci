@@ -17,6 +17,7 @@ import itertools
 import pickle
 import time
 import datetime
+from scipy import interpolate as inter
 
 pl_color = 'moccasin'
 
@@ -76,6 +77,9 @@ f_u = slm.rbs(rb_sc, thb, u)
 f_ne = slm.rbs(rb_sc, thb, ne)
 f_n0 = slm.rbs(rb_sc, thb, n0)
 
+#f_ne = inter.RectBivariateSpline(rb_sc, thb, ne, kx=1, ky=1)
+#f_n0 = inter.RectBivariateSpline(rb_sc, thb, n0, kx=1, ky=1)
+
 # failed attempt to interpolate ne onto cart grid
 #f_ne_cart = slm.rbs(grid_x, grid_z, ne)
 
@@ -88,17 +92,38 @@ kb = 1.38e-16               # boltzmann constant in cgs
 
 #------------------------calculating temperature------------------------------#
 T = U * H_mu * (gamma - 1)/(D * kb)
-T = T.T
+#T = T.T
+f_T = inter.RectBivariateSpline(rb_sc, thb, T, kx=1, ky=1) 
 
 
 F1 = ((10e3)/(24.6*1.602e-12))*(7.82e-18)   # photoionisation rate of 1S
 F3 = ((10e3)/(4.8*1.602e-12))*(7.82e-18)    # photoionisation rate of 2S triplet
 
+F1 = ((10e3)/(24.6*1.602e-12))*(7.82e-18)  # photoionisation rate of 1S
+F3 = ((10e3)/(4.8*1.602e-12))*(5.48e-18)   # photoionisation rate of 2S triplet
+
 t1 = 0                                      # lifetime of 1S
 t3 = 0                                      # lifetime of 2S triplet
 
-a1 = 1.54e-13                               # recombination rate of 1S 
-a3 = 1.49e-13                               # recombination rate of 2S triplet
+#obselete values, a1 and 13 are now found using the corresponding f_'s
+a1 = 2.17e-13                               # recombination rate of 1S 
+a3 = 1.97e-14                               # recombination rate of 2S triplet
+
+def f_a1(r, t):
+    T_i = f_T(r, t, grid = False)
+    if T_i <= 1.5e3:
+        a1 = 2.17e-13
+    else:
+        a1 = 1.54e-13
+    return a1
+
+def f_a3(r, t):
+    T_i = f_T(r, t, grid = False)
+    if T_i <= 1.5e3:
+        a3 = 1.97e-14
+    else:
+        a3 = 1.49e-14  
+    return a3
 
 ## Atomic factors ###
 A31 = 1.272e-4                  # radiative de-excitation rate 2S tri -> 1S
@@ -127,26 +152,57 @@ for r in sol_t:
 
 
 #%%
-def rhs(l, f, f_r, f_t):
+
+def get_rhs(l,f,f_r_l,f_t_l):           # need to find an expression for r and theta from l
+    '''
+    RHS of the QM equation for helium fractions in terms of distance along the streamline
+    l = distance along the streamline
+    f = helium fraction, 1D array with values f1 and f3
+    i = index of the streamline we are considering
+    '''
+    r = f_r_l(l).item()
+    t = f_t_l(l).item()
+    
+    n_e = f_ne(r, t, grid = False).item()
+    n_0 = f_n0(r, t, grid = False).item()
+    
+    vel = f_u(r, t, grid = False).item()
+    
+    A = (-n_e*a1-F1-n_e*q13a)
+    B = (-n_e*a1+A31+n_e*q31a+n_e*q31b+n_0*Q31)
+    C = (-n_e*a3+n_e*q13a)
+    D = (-n_e*a3-A31-F3-n_e*q31a-n_e*q31b-n_0*Q31)
+    
+    g1 = (n_e*a1 + A*f[0] + B*f[1])/vel
+    g2 = (n_e*a3 + C*f[0] + D*f[1])/vel
+    
+    g = np.array([g1,g2])
+    return g
+'''
+'''
+def rhs(l, f, f_r_l, f_t_l):
     f1 = f[0]
     f3 = f[1]
     
-    r = f_r(l).item()
-    t = f_t(l).item()
+    r = f_r_l(l).item()
+    t = f_t_l(l).item()
     
-    u = f_u(r, t).item()
-    ne = f_ne(r, t).item()
-    n0 = f_n0(r, t).item()
+    u = f_u(r, t, grid = False).item()
+    ne = f_ne(r, t, grid = False).item()
+    n0 = f_n0(r, t, grid = False).item()
+    
+    a1 = f_a1(r, t)
+    a3 = f_a3(r, t)
     
     g1 = u**-1 * (
         (1- f1 - f3) * ne * a1 + 
         f3 * A31 - 
-                  f1 * F1 * np.exp(-t1) - 
-                  f1 * ne * q13a + 
-                  f3* ne * q31a + 
-                  f3 * ne * q31b + 
-                  f3 * n0 * Q31
-                  )
+        f1 * F1 * np.exp(-t1) - 
+        f1 * ne * q13a + 
+        f3* ne * q31a + 
+        f3 * ne * q31b + 
+        f3 * n0 * Q31
+        )
     g2 = u**-1 * (
         (1- f1 - f3) * ne * a3 - 
         f3 * A31 - 
@@ -173,7 +229,7 @@ for stream_no in range(stream_tot): # one streamline at a time
 #for stream_no in range(0, 1):
     sol_y = np.array(sols_y[stream_no]) # thetas
     sol_t = np.array(sols_t[stream_no]) # radial distances
-    
+
     start = time.time()
 
     #print(sol_t[-1], sol_y[10])
@@ -206,49 +262,45 @@ for stream_no in range(stream_tot): # one streamline at a time
     dt = np.insert(dt, 0, 0)
     dr_dt = np.insert(dr_dt, 0, 0)
     
-    # arc length formula
-    dl = np.absolute(np.sqrt(sol_t**2 + dr_dt**2)*dt)
+    # arc length formula - both formulae below work equally well
+    dl = np.sqrt(((sol_t * dt)**2) + (dr**2))
+    #dl = np.absolute(np.sqrt(sol_t**2 + dr_dt**2)*dt)
+    
     l = np.cumsum(dl)   # cumulative sum to generate arc length array
-    l0 = [l[0], l[-1]]  # span of integration
+    l0 = np.array([l[0], l[-1]])  # span of integration
     ###########################################################################    
 
 
     # interpolate to obtain r and theta (t and y) as functions of arc length
-    f_r = interp(l, sol_t)
-    f_t = interp(l, sol_y)    
+    f_r_l = interp(l, sol_t)
+    f_t_l = interp(l, sol_y)    
     
     #^^^^^^^^^^^^^^^^^^^^^making arc length array finer^^^^^^^^^^^^^^^^^^^^^^^#
-    arc_l = []
-    for i in range(len(l) - 1):
-    #for i in range(200): # cutting at arbitrary length
-        subl = np.linspace(l[i], l[i + 1], 5) # last parameter = fineness
-        arc_l.append(subl[0:4])
-    arc_l = np.array(arc_l)
-    arc_l = arc_l.flatten()
+    arc_l = slm.make_fine(l, 5)
     #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv#
 
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^INTEGRATION^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#
-    sol_f = ivp(rhs, l0, [1, 0], method = 'LSODA',
-                args = (f_r, f_t), t_eval = arc_l,
+    sol_f = ivp(rhs, l0, [1, 1e-10], method = 'LSODA',
+                args = (f_r_l, f_t_l), t_eval = arc_l,
                 rtol = 1e-10, atol = 1e-9)
 
-    sol_l = sol_f.t         # arc lengths at which evaluations are made
-    sol_f1 = sol_f.y[0]     # He singlet population along streamline
-    sol_f3 = sol_f.y[1]     # He triplet population along streamline
+    sol_l   = sol_f.t           # arc lengths at which evaluations are made
+    sol_f1  = sol_f.y[0]        # He singlet population along streamline
+    sol_f3  = sol_f.y[1]        # He triplet population along streamline
     #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv#
     
     stream_r = []
     stream_t = []
     
     for lx in sol_l:
-        stream_r.append(f_r(lx).item())
-        stream_t.append(f_t(lx).item())
+        stream_r.append(f_r_l(lx).item() * rb[0])
+        stream_t.append(f_t_l(lx).item())
         
     rs.append(stream_r)    
     ts.append(stream_t)    
     f3s.append(sol_f3)
     
-    plt.plot(stream_r, sol_f3, color = str_color)
+    plt.plot(stream_r, sol_f3, color = 'red')
     
     plt.ylabel("fraction in triplet state")
     plt.xlabel("radius")
@@ -267,18 +319,55 @@ for stream_no in range(stream_tot): # one streamline at a time
     
    
 flat_rs = slm.flatten(rs)
+flat_rs_sc = [r / rb[0] for r in flat_rs]
 flat_ts = slm.flatten(ts)
 flat_f3s = slm.flatten(f3s)
 
 #%%
+file_f3 = 'term1/output/f3_hyd_8.p'
+file_ps = 'term1/output/ps_hyd_8.p'
+
+
+#%%
 # combining into coordinates and triangulation + interpolation
-pts_polar = [list(pair) for pair in zip(flat_rs, flat_ts)]
+pts_polar = [list(pair) for pair in zip(flat_rs_sc, flat_ts)]
 pts_carte = [[coord[0]*np.sin(coord[1]), coord[0]*np.cos(coord[1])] for coord in pts_polar]
 
 tri = Delaunay(pts_carte)
 f_f3 = interpnd(tri, flat_f3s)
 
-plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
+#plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
+plt.contourf(X, Z, f_f3(X, Z), 200, cmap = "BuPu")
 plt.colorbar()
 
 
+#%%
+
+'''
+# saving the f3s and pts_carte arrays
+with open(file_f3, "wb") as f:   
+    pickle.dump(flat_f3s, f)
+with open(file_ps, "wb") as f:   
+    pickle.dump(pts_carte, f)
+'''
+#%%
+
+with open(file_f3, 'rb') as f:
+    f3_read = pickle.load(f) 
+with open(file_ps, "rb") as f:   
+    ps_read = pickle.load(f) 
+
+    
+tri = Delaunay(ps_read)
+f_f3 = interpnd(tri, f3_read)
+
+points = np.load('term1/output/f3_coords.npy')
+logf3_values = np.load('term1/output/logf3_values.npy')
+
+tri = Delaunay(points)   # does the triangulation
+get_logf3 = interpnd(tri, logf3_values)
+
+#%%
+
+plt.contourf(X, Z, f_f3(X, Z), 200, cmap = "BuPu")
+plt.colorbar()
