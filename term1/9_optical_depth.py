@@ -104,8 +104,8 @@ grid_x = np.multiply(rb_sc, np.sin(thb))
 grid_z = np.multiply(rb_sc, np.cos(thb))
 '''
 
-grid_x = np.linspace(0, 7, 600)
-grid_z = np.linspace(-14, 7, 600)
+grid_x = np.linspace(0, 7, 100)
+grid_z = np.linspace(-14, 7, 100)
 
 cart_X, cart_Z = np.meshgrid(grid_x, grid_z)
 
@@ -236,9 +236,8 @@ dz = grid_z[1] - grid_z[0]
 taus = []
 for b in grid_x:
     taus_at_b = []
-    print(round(b, 1), " / ", grid_x[-1])
+    start = time.time()
     
-        
     for w_i in ws:
         tau_at_w = 0
         # at wavelength w_i
@@ -261,7 +260,12 @@ for b in grid_x:
                 tau_at_w += tau_i
                 
         taus_at_b.append(tau_at_w)
-    taus.append(taus_at_b)            
+    taus.append(taus_at_b)  
+    end = time.time()
+    index = np.where(grid_x == b)
+    todo = len(grid_x) - index[0][0]    
+    eta = (end - start) * todo    
+    print(round(b, 1), " / ", grid_x[-1], "\t", round(end - start, 1), "s\t", "eta", str(datetime.timedelta(seconds = round(eta, 0))))
 taus = np.array(taus)
 
 #%%
