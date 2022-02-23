@@ -102,8 +102,8 @@ F3 = ((10e3)/(4.8*1.602e-12))*(7.82e-18)    # photoionisation rate of 2S triplet
 F1 = ((10e3)/(24.6*1.602e-12))*(7.82e-18)  # photoionisation rate of 1S
 F3 = ((10e3)/(4.8*1.602e-12))*(5.48e-18)   # photoionisation rate of 2S triplet
 
-t1 = 0                                      # lifetime of 1S
-t3 = 0                                      # lifetime of 2S triplet
+t1 = 0                                      # optical depth of 1S
+t3 = 0                                      # optical depth of 2S triplet
 
 #obselete values, a1 and 13 are now found using the corresponding f_'s
 a1 = 2.17e-13                               # recombination rate of 1S 
@@ -361,13 +361,18 @@ with open(file_ps, "rb") as f:
 tri = Delaunay(ps_read)
 f_f3 = interpnd(tri, f3_read)
 
+# simo's values:
 points = np.load('term1/output/f3_coords.npy')
 logf3_values = np.load('term1/output/logf3_values.npy')
-
 tri = Delaunay(points)   # does the triangulation
 get_logf3 = interpnd(tri, logf3_values)
 
 #%%
+plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
 
-plt.contourf(X, Z, f_f3(X, Z), 200, cmap = "BuPu")
+#plt.contourf(X, Z, f_f3(X, Z), 200, cmap = "BuPu")
 plt.colorbar()
+
+#%%
+
+

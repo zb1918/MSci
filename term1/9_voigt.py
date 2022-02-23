@@ -11,15 +11,32 @@ from matplotlib import pyplot as plt
 from scipy import constants
 from scipy import special
 from scipy import integrate
+import stream_solvers
+
 plt.style.use("cool-style.mplstyle")
 
-def voigt(x, v0, A):
-    v = (c * 2 * np.pi) / (x * 1e-10)
+def voigt(x, x0, A, T):
+    # returns voigt profile around central point v0
+    # constants sigma and gamma determined by v0 and A
+    '''
+    input
+    x   : wavelength in Angstroms
+    x0  : central wavelength in Angstroms
+    A   : transition constant
+    
+    returns
+    phi (voigt lineshape) at single frequency
+    
+    '''
+    
+    v = ang_to_v(x)
+    v0 = ang_to_v(x0)
     sigma = np.sqrt(kb * T/ (2 * H_mu)) * (v0 / c_cgs)
     gamma = A / (4 * np.pi) # Lorentzian part's HWHM
     return special.voigt_profile(v - v0, sigma, gamma)
 
 def ang_to_v(l):
+    # converts wavelengths in Angstrom to freqencies in rad s-1
     return (c * 2 * np.pi) / (l * 1e-10)
 
 T = 5e3                             # temperature in K
@@ -52,9 +69,9 @@ x = np.linspace(w_min, w_max, 1000)
 
 fig, ax = plt.subplots()
 ax.ticklabel_format(style = 'plain', axis = 'x')
-plt.plot(x, fik0 * voigt(x, ang_to_v(w0), gA0), label = "j = 0")
-plt.plot(x, fik1 * voigt(x, ang_to_v(w1), gA1), label = "j = 1")
-plt.plot(x, fik2 * voigt(x, ang_to_v(w2), gA2), label = "j = 2")
+plt.plot(x, fik0 * voigt(x, w0, gA0, T), label = "j = 0")
+plt.plot(x, fik1 * voigt(x, w1, gA1, T), label = "j = 1")
+plt.plot(x, fik2 * voigt(x, w2, gA2, T), label = "j = 2")
 plt.xlabel("λ (Å)")
 plt.ylabel(r"$f_{ik}$ $\phi$ ($\nu$)")
 plt.xticks([w_min, 0.5 * (w_min + w_max), w_max])

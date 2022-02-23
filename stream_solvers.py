@@ -6,6 +6,20 @@ from scipy.interpolate import interp1d as interp
 from scipy.interpolate import interp2d as interp2
 from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
+from scipy import special
+from scipy import constants
+
+
+H_molecule = 1.00784                # mass of H in a.m.u.
+amu = 1.66054e-24                   # 1 a.m.u. in g
+H_mu = H_molecule * amu             # mass of a single H molecule in g
+gamma = 5/3                         # 1 + 2/d.o.f. where d.o.f. of H is taken to be 3
+kb = 1.38e-16                       # boltzmann constant in cgs
+He_molecule = 4.0026                # mass of He in a.m.u.
+He_mu = He_molecule * amu           # mass of a single He molecule in g
+kb = 1.38e-16                       # boltzmann constant in c.g.s. (cm2 g s-2 K-1)   
+c = constants.c                     # speed of light in m s-1
+c_cgs = c * 100                     # speed of light in c.g.s. (cm s-1)
 
 plt.style.use("cool-style.mplstyle")
 
@@ -26,6 +40,7 @@ def make_fine(array, f):
     fine_array = np.array(fine_array)
     fine_array = fine_array.flatten()
     return fine_array
+ 
     
 #----------------------functional forms of known streamlines------------------#
 def u_r(r, theta):
@@ -141,7 +156,35 @@ def fit_sigmoid(rads, thes, temp):
         #popt, pcov = curve_fit(sigmoid, rads, temps, p0, method='lm')
         #plt.plot(fine_rb, sigmoid(fine_rb, *popt), 'r-')
         
+def ang_to_v(l):
+    # converts wavelengths in Angstrom to freqencies in rad s-1
+    return (c * 2 * np.pi) / (l * 1e-10)
+
         
+def voigt(x, x0, A, T):
+    '''
+    returns voigt profile around central point v0
+    constants sigma and gamma determined by v0 and A
+    
+    Parameters
+    ----------
+    x   : wavelength in Angstroms
+    x0  : central wavelength in Angstroms
+    A   : transition constant
+    T   : temperature at location 
+    
+    Returns
+    -------
+    phi (voigt lineshape) at single frequency
+    
+    '''
+    
+    v = ang_to_v(x)
+    v0 = ang_to_v(x0)
+    
+    sigma = np.sqrt(kb * T/ (2 * H_mu)) * (v0 / c_cgs)
+    gamma = A / (4 * np.pi) # Lorentzian part's HWHM
+    return special.voigt_profile(v - v0, sigma, gamma)
     
 
 
