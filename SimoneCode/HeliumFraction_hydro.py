@@ -10,6 +10,7 @@ import math
 from scipy.io import loadmat
 from scipy import interpolate as inter
 from scipy.integrate import solve_ivp as ivp
+from scipy.integrate import quad as integral
 from scipy.spatial import Delaunay
 
 #%%
@@ -56,8 +57,15 @@ q31b = 4.0e-9                   # collisional excitation rate 2S tri -> 2P sing
 Q31 = 5e-10                     # collisional de-exciration rate 2S tri -> 1S
 
 ### Physical quantites of the system ###
-F1 = ((10e3)/(24.6*1.602e-12))*(7.82e-18)  # photoionisation rate of 1S
-F3 = ((10e3)/(4.8*1.602e-12))*(5.48e-18)   # photoionisation rate of 2S triplet
+nu_T = 1.16e15
+def d_photorate3(nu):
+    sigma = (5.48e-18)*((nu/nu_T)**-3)
+    dF = ((1e3)/((6.6261e-27)*nu))*(sigma)
+    return dF
+    
+    
+F1 = ((1e3)/(24.6*1.602e-12))*(7.82e-18)     # photoionisation rate of 1S
+F3 = np.abs(integral(d_photorate3,nu_T,np.inf)[0])   # photoionisation rate of 2S triplet
 
 def a1(r,t):                               # recombination rate of 1S 
     if get_T(r,t,grid=False) <= 1.5e3:
@@ -163,8 +171,8 @@ def get_rhs(l,f,i):           # need to find an expression for r and theta from 
     t = get_th[i](l)
     n_e = get_ne(r,t,grid=False)
     n_0 = get_n0(r,t,grid=False)
-    a_1 = a1(r,t)
-    a_3 = a3(r,t)
+    a_1 = 1.54e-13 
+    a_3 = 1.49e-14 
     
     vel = (10**get_log_u(r,t,grid=False))
     
@@ -200,7 +208,7 @@ for i in range(len(stream_l)):
     l_sol.append(sol_f.t)
 
 #%%
-'''
+
 num=1110  ## here fraction starts to fuck off
 
 fig1 = plt.figure()
@@ -211,6 +219,7 @@ fig2 = plt.figure()
 for i in range(num):
     plt.plot(l_sol[i],f3[i])
     
+'''   
 fig3  = plt.figure()
 for i in range(len(l_sol)):
     if i < num:
@@ -256,16 +265,16 @@ for i in range(len(f3)):
         logf3_list.append(frac)
 logf3_values = np.asarray(logf3_list)
 
-np.save('f3_coords',points)
-np.save('logf3_values',logf3_values)
+np.save('f3_coords_001',points)
+np.save('logf3_values_001',logf3_values)
 
 tri = Delaunay(points)   # does the triangulation
 get_logf3 = inter.LinearNDInterpolator(tri,logf3_values)
 
 #%%
 #for i in range(len(r_sol)-1):
- #   plt.plot(r_sol[i]*np.sin(th_sol[i])/rb[0][0],r_sol[i]*np.cos(th_sol[i])/rb[0][0],'r')
-    
+ #   plt.plot(r_sol[i]*np.sin(th_sol[i])/rb[0][0],r_sol[i]*np.cos(th_sol[i])/rb[0][0],'r') 
+
 plt.contourf(X,Z,10**get_logf3(X,Z),200)
 circle1 = plt.Circle((0, 0), 1, color='k')
 plt.gca().add_patch(circle1)

@@ -9,7 +9,9 @@ import math
 from scipy.io import loadmat
 from scipy import interpolate as inter
 from scipy.integrate import solve_ivp as ivp
+from scipy.integrate import quad as integral
 from scipy.spatial import Delaunay
+from astropy.modeling.models import Voigt1D
 
 #%%
 # loads dictionary of MHD variables
@@ -259,8 +261,14 @@ q31b = 4.0e-9                   # collisional excitation rate 2S tri -> 2P sing
 Q31 = 5e-10                     # collisional de-exciration rate 2S tri -> 1S
 
 ### Physical quantites of the system ###
-F1 = ((10e3)/(24.6*1.602e-12))*(7.82e-18)  # photoionisation rate of 1S
-F3 = ((10e3)/(4.8*1.602e-12))*(4.84e-18)   # photoionisation rate of 2S triplet
+nu_T = 1.16e15
+def d_photorate3(nu):
+    sigma = (5.48e-18)*((nu/nu_T)**-3)
+    dF = ((1e3)/((6.6261e-27)*nu))*(sigma)
+    return dF
+
+F1 = ((1e3)/(24.6*1.602e-12))*(7.82e-18)  # photoionisation rate of 1S
+F3 = np.abs(integral(d_photorate3,nu_T,np.inf)[0])   # photoionisation rate of 2S triplet
 
 def a1(r,t):                               # recombination rate of 1S 
     if get_T(r,t,grid=False) <= 1.5e3:
@@ -296,8 +304,8 @@ def get_rhs(l,f,i):           # need to find an expression for r and theta from 
     t = get_th[i](l)
     n_e = get_ne(r,t,grid=False)
     n_0 = get_n0(r,t,grid=False)
-    a_1 = a1(r,t)
-    a_3 = a3(r,t)
+    a_1 = 1.54e-13
+    a_3 = 1.49e-14
     
     vel = (10**get_log_u(r,t,grid=False))
     
@@ -409,7 +417,7 @@ plt.colorbar()
 #%%
 ### GENERATE A GRID FOR LINE OF SIGHT ###
 x = np.linspace(0,r_max,500)
-y = np.linspace(1.03,8,500)
+y = np.linspace(1.03,7,500)
 x_grid, z_grid = np.meshgrid(x,y)
 
 ## Interpolate what we need on a cartesian grid ##
@@ -436,9 +444,101 @@ for i in range(len(y)):          # calculate N_j at constant z (ie y) values alo
 plt.plot(y,np.asarray(N))
 plt.yscale('log')
 
-import AbsorptionLine_Hydro as Ab
-plt.plot(Ab.x,np.asarray(Ab.N))
-plt.yscale('log')
+#import AbsorptionLine_Hydro as Ab
+#plt.plot(Ab.x,np.asarray(Ab.N))
+#plt.yscale('log')
+#plt.ylim(8e8,1e12)
 
 #%%
-plt.contourf(x_grid,z_grid,10**get_logf3(x_grid,z_grid),200)
+### PROJECT VELOCITY ALONG LINE OF SIGHT (Z COMPONENT) FOR RED/BLUE-SHIFT ###
+v_x = (vrb*np.sin(tax.T)+vthb*np.cos(tax.T))
+v_z = (vrb*np.cos(tax.T)-vthb*np.sin(tax.T))
+plt.figure()
+plt.contourf(X,Z,v_x,200)
+#plt.quiver(X,Z,v_x,v_z,width=0.0005,headwidth=3,headlength=3)
+plt.colorbar()
+
+sign_ux = np.sign(v_x)
+
+get_ux = inter.RectBivariateSpline(radii.T[0],thb.T[0],v_x)
+get_sign_ux = inter.RectBivariateSpline(radii.T[0],thb.T[0],np.sign(v_x))
+
+plt.figure()
+plt.contourf(X,Z,get_ux(rax,tax,grid=False).T,200)
+plt.colorbar()
+
+#%%
+e = 4.8032e-10          # electron charge
+me = 9.1094e-28         # electron mass
+c = 2.99792458e10       # speed of light
+
+os = np.array([2.9958e-01, 1.7974e-01, 5.9902e-02])  #oscillator strengths in decreasing wl
+nu_0 = np.array([c/(10830.33977e-8), c/(10830.25010e-8), c/(10829.09114e-8)])  #transition frequencies
+A = np.array([5.1080e+07, 3.0648e+07, 1.0216e+07])   # Einstein coefficient of 10830A transition
+
+R = float(100000)                        # telescope resolution
+dlambda = 10830.33977e-8/R               # wl width of gaussian to convolve
+
+nu_lim = np.abs((c/10832e-8)-(c/10830e-8))
+nu = np.linspace((c/(10832e-8)),(c/(10828e-8)),500)    # frequency array
+wl = c/nu
+
+#%%
+tau = []                       # list of optical depths from each row
+for i in range(len(y)):        # calculate I_j at constant z (ie y) values along x 
+    t_j = []             # optical depth in cells along the ith row
+    for j in range(len(x)):
+        r_i = np.sqrt(x[j]**2+y[i]**2)
+        th_i = np.arctan2(x[j],y[i])
+        
+        f3_cell = 10**get_logf3(x[j],y[i])
+        D_cell = 10**get_logD(r_i,th_i,grid=False)
+        T_cell = get_T(r_i,th_i,grid=False)        
+        v_los = get_ux(r_i,th_i,grid=False)
+        
+        alpha = np.sqrt((2*np.log(2)*k*T_cell)/mHe)*(nu_0/c)  # Gaussian widths
+        gamma = A/(4*np.pi)                                   # lorentzian widths
+        
+        nu_shift = nu_0 - nu_0*v_los/c            # doppler shifted frequencies
+        peak= 2/(np.pi*gamma)                     # peak of the lorentzian for normalisation
+        
+        # Voigt line profiles
+        v0 = Voigt1D(nu_shift[0],peak[0],gamma[0],alpha[0])
+        v1 = Voigt1D(nu_shift[1],peak[1],gamma[1],alpha[1])
+        v2 = Voigt1D(nu_shift[2],peak[2],gamma[2],alpha[2])
+        
+        Phi = np.array([v0(nu),v1(nu),v2(nu)])
+        
+        sigma = (((np.pi*(e**2)*os)/(me*c))*Phi.T).T
+        
+        # optical depth in i,j cell
+        t_cell = (sigma[0]+sigma[1]+sigma[2])*XHe*D_cell*f3_cell*dx*rb[0]/mHe
+        
+        t_j.append(t_cell)
+        
+    t_i = np.nansum(np.asarray(t_j,dtype=float),axis=0,dtype=float) # optical depth of a row 
+    tau.append(t_i)  
+
+#%%
+R_s = 6.955e10
+R_D = rb[-1]
+R_i = np.copy(y)*rb[0]
+dR = np.diff(R_i)[0]
+
+I_rings = []
+for i in range(len(tau)):
+    I_rings.append((np.exp(-tau[i]))*(2*R_i[i]*dR))
+    
+I_abs = (np.nansum(np.asarray(I_rings),axis=0))/(R_i[-1]**2)
+np.save('I_abs_mag.npy',I_abs)
+
+plt.figure()
+plt.axvline(c/nu_0[0]/1e-8)
+plt.plot(wl/1e-8,I_abs,'k')
+
+plt.figure()
+plt.axvline(c/nu_0[0]/1e-8)
+plt.plot(wl/1e-8,I_abs,'b')
+
+I_abs_hydro = np.load('I_abs_hydro.npy')
+plt.plot(wl/1e-8,I_abs_hydro,'r')
