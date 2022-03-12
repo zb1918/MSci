@@ -9,21 +9,16 @@ from scipy.io import loadmat
 import stream_solvers as slm
 from scipy.integrate import solve_ivp as ivp
 import pickle
+import time
+import datetime
 
 plt.style.use("cool-style.mplstyle")
-pl_color = 'blue'
+pl_color = 'red'
 
 MHD_sim = loadmat("term1/sims/mhd_sim.mat")
 
 file_t = 'term1/sols/mhd_sol_t.p'
 file_y = 'term1/sols/mhd_sol_y.p'
-
-if os.path.exists(file_t):
-    os.remove(file_t)
-    
-if os.path.exists(file_y):
-    os.remove(file_y)
-
 
 rb = MHD_sim['r']
 rb = rb.T[0]
@@ -38,11 +33,6 @@ D = MHD_sim['rho']
 Br = MHD_sim['B1']
 Bt = MHD_sim['B2']
 Bc = MHD_sim['B3']
-
-'''
-X = np.outer(rb,np.sin(thb))
-Z = np.outer(rb,np.cos(thb))
-'''
 
 X = np.outer(rb_sc,np.sin(thb))
 Z = np.outer(rb_sc,np.cos(thb))
@@ -78,7 +68,8 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 1, 500)*np.pi
+thetas = np.linspace(0, 0.3, 25) * np.pi
+thetas = np.append(thetas, np.linspace(0.3, 0.5, 10) * np.pi)
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -96,8 +87,9 @@ sols_y = []
 sols_t = []
 #thetas = np.array([1.5549296972313118])
 for theta in thetas:
-    print(theta)
-
+    #print(theta)
+    index = np.where(thetas == theta)[0][0]
+    start = time.time()
     sol_y = np.array([])
     sol_t = np.array([])
     num_events = 0
@@ -107,14 +99,14 @@ for theta in thetas:
     event.direction = np.array(f_r(t_eval[0], theta) / abs(f_r(t_eval[0], theta))) * -1
     event.direction = event.direction.item()
     
-    print(event.direction)
+    #print(event.direction)
 
     if len(sol_y) > 0:
         print("what is the point of this test")
         t_eval = [r for r in radii if r * event.direction > sol_t[-1] * event.direction]
     t_eval = t_eval[::-1 * int(event.direction)]
     rspan = [t_eval[0], t_eval[-1]]
-    print(rspan)
+    #print(rspan)
     
     #intital solution until the event is triggered (negative radial velocity)
     sol = ivp(slm.dydt_rbs, rspan, [theta], t_eval = t_eval,
@@ -150,17 +142,31 @@ for theta in thetas:
         sol_y = sol_y.flatten()
         sol_t = sol_t.flatten()      
     
-    if sol_t[-1] != sol_t[0]: # if the streamline doesn't 'close'
-    #if 1 == 1:
-        slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
-        plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
+    #if sol_t[-1] != sol_t[0]: # if the streamline doesn't 'close'
+    if 1 == 1:
+        if index == 0:
+            plt.plot(slm.cart_x(sol_t, sol_y), slm.cart_y(sol_t, sol_y), color = "red", lw = 1, label = "MHD")
+        else:
+            slm.plot_cart(sol_t, sol_y, color = "red", lw = 1)
+        #plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
         
         sols_t.append(sol_t)
         sols_y.append(sol_y)
-        plt.show()
         
-planet = plt.Circle((0, 0), 1, color=pl_color)
-ax.add_patch(planet)
+    end = time.time()
+    
+    if index % 10 == 0:
+        todo = len(thetas) - index
+        eta = (end - start) * todo
+        print(index, '\t / \t', len(thetas), '\t', 'eta', str(datetime.timedelta(seconds = round(eta, 0))))
+plt.xlabel(r"z [$r_{pl}$]")
+plt.ylabel(r"x [$r_{pl}$]")
+plt.xlim(-2, 7)
+plt.ylim(-5, 5) 
+plt.legend() 
+plt.savefig("term1/images/streamlines_mhd.png")      
+#planet = plt.Circle((0, 0), 1, color=pl_color)
+#ax.add_patch(planet)
 
 #plt.savefig("images/velocity.pdf", format="pdf")
 plt.show()

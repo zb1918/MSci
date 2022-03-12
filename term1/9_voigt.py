@@ -31,13 +31,13 @@ def voigt(x, x0, A, T):
     
     v = ang_to_v(x)
     v0 = ang_to_v(x0)
-    sigma = np.sqrt(kb * T/ (2 * H_mu)) * (v0 / c_cgs)
+    sigma = np.sqrt(kb * T/ He_mu) * (v0 / c_cgs)
     gamma = A / (4 * np.pi) # Lorentzian part's HWHM
     return special.voigt_profile(v - v0, sigma, gamma)
 
 def ang_to_v(l):
-    # converts wavelengths in Angstrom to freqencies in rad s-1
-    return (c * 2 * np.pi) / (l * 1e-10)
+    # converts wavelengths in Angstrom to freqencies in s-1
+    return (c) / (l * 1e-10) * 2 * np.pi
 
 T = 5e3                             # temperature in K
 H_molecule = 1.00784                # mass of H in a.m.u.
@@ -46,7 +46,8 @@ H_mu = H_molecule * amu             # mass of a single H molecule in g
 kb = 1.38e-16                       # boltzmann constant in c.g.s. (cm2 g s-2 K-1)   
 c = constants.c                     # speed of light in m s-1
 c_cgs = c * 100                     # speed of light in c.g.s. (cm s-1)
-
+He_molecule = 4.0026                # mass of He in a.m.u.
+He_mu = He_molecule * amu           # mass of a single He molecule in g
 w_min = 10825
 w_max = 10835
 

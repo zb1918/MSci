@@ -14,7 +14,8 @@ import stream_solvers as slm
 from scipy.io import loadmat
 from scipy.interpolate import interp1d as interp
 import pickle
-
+import time
+import datetime
 
 plt.style.use("cool-style.mplstyle")
 pl_color = 'moccasin'
@@ -70,7 +71,7 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 0.5, 500)*np.pi
+thetas = np.linspace(0, 0.5, 25)*np.pi
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -90,14 +91,11 @@ fig, ax = plt.subplots()
 sols_t = []
 sols_y = []
 
-if os.path.exists(file_t):
-    os.remove(file_t)
-    
-if os.path.exists(file_y):
-    os.remove(file_y)
 
 
 for theta in thetas:
+    index = np.where(thetas == theta)[0][0]
+    start = time.time()
     sol_y = np.array([])
     sol_t = np.array([])
     num_events = 0
@@ -149,24 +147,32 @@ for theta in thetas:
         print(sol_t)
     sols_t.append(list(sol_t))    
     sols_y.append(list(sol_y))
-    slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
-    plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta))
-'''    
-sols_t = np.array(sols_t, dtype = 'object')    
-sols_y = np.array(sols_y, dtype = 'object')    
-np.save(file_t, sols_t, allow_pickle = True)
-np.save(file_y, sols_y, allow_pickle = True)
+    #slm.plot_cart(sol_t, sol_y, color = "blue", lw = 2)
+    if index == 0:
+        plt.plot(slm.cart_x(sol_t, sol_y), slm.cart_y(sol_t, sol_y), label = "Hydrodynamic", color = 'blue', lw = 1)
+    else:
+        plt.plot(slm.cart_x(sol_t, sol_y), slm.cart_y(sol_t, sol_y), color = 'blue', lw = 1)
+    # plt.scatter(slm.cart_x(r_pl, theta), slm.cart_y(r_pl, theta)) # scatter the starting points
+    end = time.time()
+    plt.ylabel(r"z [$r_{pl}$]")
+    plt.xlabel(r"x [$r_{pl}$]")
+    plt.xlim(-5, 5)
+    plt.ylim(-5, 5)
+    plt.legend()
+    if index % 10 == 0:
+        todo = len(thetas) - index
+        eta = todo * (end - start)
+        print(index, '\t / \t', len(thetas), '\t', 'eta', str(datetime.timedelta(seconds = round(eta, 0))))
+
+
 '''
-
-
 with open(file_t, "wb") as ftp:   #Pickling
     pickle.dump(sols_t, ftp)
 with open(file_y, "wb") as fyp:   #Pickling
     pickle.dump(sols_y, fyp)
-    
-    
+'''    
+plt.savefig("term1/images/streamlines_hyd")   
 planet = plt.Circle((0, 0), 1, color = pl_color)
 ax.add_patch(planet)
-plt.show()
 
 

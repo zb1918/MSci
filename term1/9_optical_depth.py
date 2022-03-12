@@ -18,6 +18,7 @@ import time
 import datetime
 from scipy import interpolate as inter
 from scipy import constants
+import pandas as pd
 
 pl_color = 'moccasin'
 
@@ -25,6 +26,8 @@ pl_color = 'moccasin'
 analysing hydro lines
 
 '''
+
+
 
 hydro_sim = loadmat("term1/sims/hyd_sim.mat")
 
@@ -44,6 +47,7 @@ He_mu = He_molecule * amu           # mass of a single He molecule in g
 kb = 1.38e-16                       # boltzmann constant in c.g.s. (cm2 g s-2 K-1)   
 c = constants.c                     # speed of light in m s-1
 e = constants.e                     # elementary charge in SI
+e_cgs = 4.803204251e-10             # elementary charge in c.g.s.
 m_e = constants.m_e                 # mass of electron in kg
 m_e_cgs = m_e * 1e3                 # mass of electron in g
 c_cgs = c * 100                     # speed of light in c.g.s. (cm s-1)
@@ -93,9 +97,9 @@ XHe = 0.25                          # fraction of gas that is Helium
 nHe = XHe * D / He_mu               # number density of Helium
 mHe = XHe * D                       # mass density of Helium
 
-sig_0 = (np.pi * e**2) / (m_e * c)  # pi e^2 / mc (absorption cross section prefactor) in m^2
-sig_0_cgs = sig_0 * 1e3 * 1e3
-
+#sig_0 = (np.pi * e**2) / (m_e * c)  # pi e^2 / mc (absorption cross section prefactor) in m^2
+#sig_0_cgs = sig_0 * 1e3 * 1e3
+sig_0_cgs = (np.pi * e_cgs**2) / (m_e_cgs * c_cgs)
 
 X = np.outer(rb_sc, np.sin(thb)) # meshgrid of X coordinates
 Z = np.outer(rb_sc, np.cos(thb)) # meshgrid of Z coordinates
@@ -104,10 +108,6 @@ grid_x = np.multiply(rb_sc, np.sin(thb))
 grid_z = np.multiply(rb_sc, np.cos(thb))
 '''
 
-grid_x = np.linspace(0, 7, 100)
-grid_z = np.linspace(-14, 7, 100)
-
-cart_X, cart_Z = np.meshgrid(grid_x, grid_z)
 
 rax, tax = np.meshgrid(rb_sc, thb)
 
@@ -209,26 +209,90 @@ with open(file_ps, "rb") as f:
 tri = Delaunay(ps_read)
 f_f3 = interpnd(tri, f3_read)
 
-# simo's values:
-points = np.load('term1/output/f3_coords.npy')
-logf3_values = np.load('term1/output/logf3_values.npy')
-tri = Delaunay(points)   # does the triangulation
-get_logf3 = interpnd(tri, logf3_values)
+grid_x = np.linspace(0, 7, 500)
+grid_z = np.linspace(-7, 7, 500)
+cart_X, cart_Z = np.meshgrid(grid_x, grid_z)
 
 #%%
-plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
+grid_x = np.linspace(0, 7, 500)
+grid_z = np.linspace(-7, 7, 500)
+cart_X, cart_Z = np.meshgrid(grid_x, grid_z)
 
-#plt.contourf(X, Z, f_f3(X, Z), 200, cmap = "BuPu")
-plt.colorbar()
+nHe_cart = f_nHe_cart(cart_X, cart_Z)
+T_cart = f_T_cart(cart_X, cart_Z)
+f3_cart = f_f3(cart_X, cart_Z)
+n3_cart = nHe_cart * f3_cart
+
+w_min = 10828
+w_max = 10833
+ws = np.linspace(w_min, w_max, 200)
+
+dz = grid_z[1] - grid_z[0]
+tau_bs = []
+for w in ws:
+    start = time.time()
+    phi_0 = slm.voigt(w, w0, gA0, T_cart) * fik0
+    phi_1 = slm.voigt(w, w1, gA1, T_cart) * fik1
+    phi_2 = slm.voigt(w, w2, gA2, T_cart) * fik2
+    phi = phi_0 + phi_1 + phi_2
+    tau = phi * n3_cart * sig_0_cgs * dz * rb[0]
+    
+    tau_nan = [[c if c > 0 else np.inf for c in row] for row in tau]
+        
+    tau_b = np.sum(tau_nan, 0)
+    
+    tau_bs.append(tau_b)
+    end = time.time()
+    
+    index = np.where(ws == w)[0][0]
+    if index % 5 == 0:   
+        todo = len(ws) - index
+        eta = todo * (end - start)
+        print(index, '\t / \t', len(ws), '\t', 'eta', str(datetime.timedelta(seconds = round(eta, 0))))
+    
+tau_bs = np.array(tau_bs)
+#%%
+
+tau_ws = tau_bs.T
+
+bs = grid_x        
+bs_new = []
+taus_new = []
+
+for i in range(len(tau_ws)):
+    if bs[i] > 1:
+        bs_new.append(bs[i])
+        taus_new.append(tau_ws[i])
+        
+bs_shifted = bs_new + 0.5 * (bs_new[1] - bs_new[0])   
+        
+flux = []
+taus_new = np.array(taus_new)
+abs_frac = np.exp(-taus_new)
+
+for i in range(len(bs_new)):
+    b = bs_shifted[i]
+    if i == 0:
+        b_prev = 1
+    else:
+        b_prev = bs_shifted[i - 1]
+    b_diff = b**2 - b_prev**2
+    tau_w = abs_frac[i]
+    flux.append(tau_w * b_diff)
+    
+flux = np.array(flux)   
+flux = np.sum(flux, 0) 
+flux_frac = 100 * flux / bs_new[-1]**2    
 
 #%%
+# arrays for parameters for each transition (ascending in wavelength)
 osc = [fik0, fik1, fik2]
 w_c = [w0, w1, w2]
 g_A = [gA0, gA1, gA2]
 
-
+# wavelengths to look at
 w_min = 10828
-w_max = 10832
+w_max = 10833
 ws = np.linspace(w_min, w_max, 200)
 
 dz = grid_z[1] - grid_z[0]
@@ -274,16 +338,17 @@ bs_shifted = bs + 0.5 * (bs[1] - bs[0])
 bs_new = []
 taus_new = []
 
-for i in range(len(bs_shifted)):
+for i in range(len(taus)):
     if bs_shifted[i] > 1:
         bs_new.append(bs_shifted[i])
         taus_new.append(taus[i])
-       
+        
+        
 taus_l_b = np.array(taus_new).T
 flux = []
 for tau_l in taus_l_b:
     flux_tot = 0
-    tau_tot = 0
+
     for j in range(len(bs_new)):  
         b = bs_new[j]
         
@@ -302,13 +367,16 @@ for tau_l in taus_l_b:
     flux.append(flux_tot)        
 flux = np.array(flux)
 
-flux_frac = 100* flux / bs_new[-1]**2
+flux_frac = 100 * flux / bs_new[-1]**2
+#%%
+
+w_c = [w0, w1, w2]
 
 y = flux_frac
 fig, ax = plt.subplots()
 plt.plot(ws, y, color = 'navy')
 plt.xlabel("λ (Å)")
-plt.ylabel(r"$F_{in}$ / $F_{out}$")
+plt.ylabel(r"$F_{in}$ / $F_{out}$  (%)")
 ax.ticklabel_format(style = 'plain', axis = 'x')
 plt.xticks([w_min, .5 * (w_min + w_max), w_max])
 plt.vlines(w_c[0], min(y), max(y), color = 'red', lw = 0.3)

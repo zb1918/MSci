@@ -157,11 +157,11 @@ def fit_sigmoid(rads, thes, temp):
         #plt.plot(fine_rb, sigmoid(fine_rb, *popt), 'r-')
         
 def ang_to_v(l):
-    # converts wavelengths in Angstrom to freqencies in rad s-1
-    return (c * 2 * np.pi) / (l * 1e-10)
+    # converts wavelengths in Angstrom to freqencies in s-1
+    return (c / (l * 1e-10)) #* 2 * np.pi
 
         
-def voigt(x, x0, A, T):
+def voigt(x, x0, A, T, x0_shifted = None):
     '''
     returns voigt profile around central point v0
     constants sigma and gamma determined by v0 and A
@@ -181,8 +181,13 @@ def voigt(x, x0, A, T):
     
     v = ang_to_v(x)
     v0 = ang_to_v(x0)
+    sigma = np.sqrt(kb * T/ He_mu) * (v0 / c_cgs)
     
-    sigma = np.sqrt(kb * T/ (2 * H_mu)) * (v0 / c_cgs)
+    
+    if x0_shifted is None:
+        pass
+    else:
+        v0 = ang_to_v(x0_shifted)    
     gamma = A / (4 * np.pi) # Lorentzian part's HWHM
     return special.voigt_profile(v - v0, sigma, gamma)
     

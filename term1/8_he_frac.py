@@ -17,6 +17,7 @@ import itertools
 import pickle
 import time
 import datetime
+from scipy import constants
 from scipy import interpolate as inter
 
 pl_color = 'moccasin'
@@ -36,7 +37,7 @@ str_color = 'blue'
 #----------------------------scaling radial distances-------------------------#
 rb = hydro_sim['r']             
 rb = rb.T[0]                # 1D array of radial distances
-rb_sc = rb/rb[0]            # 1D array of radial distances normalised: r[0] = 1
+rb_sc = rb/abs(rb[0])            # 1D array of radial distances normalised: r[0] = 1
 rb_max = rb[-1]             # upper bound for radial distance 
 rb_sc_max = rb_sc[-1]       # upper bound for radial distance normalised 
 
@@ -48,13 +49,32 @@ vrb = hydro_sim['vr']
 vthb = hydro_sim['vth']
 u = np.sqrt((vrb**2) + (vthb**2))   # |u|
 
+
+#-------------- constants in cgs----------------------------------------------#
+H_molecule = 1.00784                # mass of H in a.m.u.
+amu = 1.66054e-24                   # 1 a.m.u. in g
+H_mu = H_molecule * amu             # mass of a single H molecule in g
+gamma = 5/3                         # 1 + 2/d.o.f. where d.o.f. of H is taken to be 3
+kb = 1.38e-16                       # boltzmann constant in cgs
+He_molecule = 4.0026                # mass of He in a.m.u.
+He_mu = He_molecule * amu           # mass of a single He molecule in g
+kb = 1.38e-16                       # boltzmann constant in c.g.s. (cm2 g s-2 K-1)   
+c = constants.c                     # speed of light in m s-1
+e = constants.e                     # elementary charge in SI
+m_e = constants.m_e                 # mass of electron in kg
+m_e_cgs = m_e * 1e3                 # mass of electron in g
+c_cgs = c * 100                     # speed of light in c.g.s. (cm s-1)
+
 D = hydro_sim['D']
 U = hydro_sim['U']
 Xe = hydro_sim['ne']
-n = D / (1.00784 * 1.66e-24)        # number density
+n = D / H_mu                        # number density of Hydrogen
 ne = n * Xe                         # electron number density
-Xh = 1 - Xe                         # fraction of non ionised hydrogen
-n0 = n * Xh                         # neutral hydrogen number density
+XH = 1 - Xe                         # fraction of non ionised Hydrogen
+n0 = n * XH                         # neutral Hydrogen number density
+XHe = 0.25                          # fraction of gas that is Helium
+nHe = XHe * D / He_mu               # number density of Helium
+mHe = XHe * D                       # mass density of Helium
 
 X = np.outer(rb_sc, np.sin(thb)) # meshgrid of X coordinates
 Z = np.outer(rb_sc, np.cos(thb)) # meshgrid of Z coordinates
@@ -63,8 +83,8 @@ grid_x = np.multiply(rb_sc, np.sin(thb))
 grid_z = np.multiply(rb_sc, np.cos(thb))
 '''
 
-grid_x = np.linspace(0, 14, 128)
-grid_z = np.linspace(-14, 14, 128)
+grid_x = np.linspace(0, 14, 200)
+grid_z = np.linspace(-14, 14, 200)
 
 cart_X, cart_Z = np.meshgrid(grid_x, grid_z)
 
@@ -76,19 +96,13 @@ f_t = slm.rbs(rb_sc, thb, vthb)
 f_u = slm.rbs(rb_sc, thb, u)
 f_ne = slm.rbs(rb_sc, thb, ne)
 f_n0 = slm.rbs(rb_sc, thb, n0)
+f_nHe = slm.rbs(rb_sc, thb, nHe)
 
 #f_ne = inter.RectBivariateSpline(rb_sc, thb, ne, kx=1, ky=1)
 #f_n0 = inter.RectBivariateSpline(rb_sc, thb, n0, kx=1, ky=1)
 
 # failed attempt to interpolate ne onto cart grid
 #f_ne_cart = slm.rbs(grid_x, grid_z, ne)
-
-#---------------------------constants in cgs----------------------------------#
-H_molecule = 1.00784        # mass of H in a.m.u.
-amu = 1.66e-24              # 1 a.m.u. in g
-H_mu = H_molecule * amu     # mass of a single H molecule in g
-gamma = 5/3                 # 1 + 2/d.o.f. where d.o.f. of H is taken to be 3
-kb = 1.38e-16               # boltzmann constant in cgs
 
 #------------------------calculating temperature------------------------------#
 T = U * H_mu * (gamma - 1)/(D * kb)
@@ -133,53 +147,7 @@ q31b = 4.0e-9                   # collisional excitation rate 2S tri -> 2P sing
 Q31 = 5e-10                     # collisional de-exciration rate 2S tri -> 1S
 
 
-'''
-plt.contourf(X, Z, ne, 64, cmap = "BuPu")
-c = plt.colorbar()
-c.set_label(r"$\log_{10}$(ne) [g/cm3]")
-
-
-ne_i = []
-for r in sol_t:
-    
-    i = np.where(sol_t == r)[0].item() # index of r in sol_t (i.e. where it is)
-    t = sol_t[i]
-    ne_i.append(f_ne(r, t).item())
-    
-#plt.plot(sol_t, ne_i)
-
-'''
-
-
 #%%
-
-def get_rhs(l,f,f_r_l,f_t_l):           # need to find an expression for r and theta from l
-    '''
-    RHS of the QM equation for helium fractions in terms of distance along the streamline
-    l = distance along the streamline
-    f = helium fraction, 1D array with values f1 and f3
-    i = index of the streamline we are considering
-    '''
-    r = f_r_l(l).item()
-    t = f_t_l(l).item()
-    
-    n_e = f_ne(r, t, grid = False).item()
-    n_0 = f_n0(r, t, grid = False).item()
-    
-    vel = f_u(r, t, grid = False).item()
-    
-    A = (-n_e*a1-F1-n_e*q13a)
-    B = (-n_e*a1+A31+n_e*q31a+n_e*q31b+n_0*Q31)
-    C = (-n_e*a3+n_e*q13a)
-    D = (-n_e*a3-A31-F3-n_e*q31a-n_e*q31b-n_0*Q31)
-    
-    g1 = (n_e*a1 + A*f[0] + B*f[1])/vel
-    g2 = (n_e*a3 + C*f[0] + D*f[1])/vel
-    
-    g = np.array([g1,g2])
-    return g
-'''
-'''
 def rhs(l, f, f_r_l, f_t_l):
     f1 = f[0]
     f3 = f[1]
@@ -224,7 +192,9 @@ rs =    []
 ts =    []    
 f3s =   []
 
-stream_tot = 500
+stream_tot = len(sols_t)
+stream_tot = 1
+
 for stream_no in range(stream_tot): # one streamline at a time
 #for stream_no in range(0, 1):
     sol_y = np.array(sols_y[stream_no]) # thetas
@@ -282,7 +252,7 @@ for stream_no in range(stream_tot): # one streamline at a time
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^INTEGRATION^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#
     sol_f = ivp(rhs, l0, [1, 1e-10], method = 'LSODA',
                 args = (f_r_l, f_t_l), t_eval = arc_l,
-                rtol = 1e-10, atol = 1e-9)
+                rtol = 1e-12, atol = 1e-10)
 
     sol_l   = sol_f.t           # arc lengths at which evaluations are made
     sol_f1  = sol_f.y[0]        # He singlet population along streamline
@@ -300,10 +270,11 @@ for stream_no in range(stream_tot): # one streamline at a time
     ts.append(stream_t)    
     f3s.append(sol_f3)
     
-    plt.plot(stream_r, sol_f3, color = 'red')
-    
+    plt.plot(stream_r / rb[0], sol_f3, color = str_color)
+    plt.xticks([1, 3, 5, 7, 9, 11, 13])
     plt.ylabel("fraction in triplet state")
-    plt.xlabel("radius")
+    plt.xlabel(r"radius [$r_{pl}$]")
+    #plt.savefig('term1/images/he_frac_hyd.png')
     plt.show()
     '''
     fig, ax = plt.subplots()     
@@ -351,22 +322,44 @@ with open(file_ps, "wb") as f:
     pickle.dump(pts_carte, f)
 '''
 #%%
+# read helium triplet fraction and points files respectively
 
 with open(file_f3, 'rb') as f:
     f3_read = pickle.load(f) 
 with open(file_ps, "rb") as f:   
     ps_read = pickle.load(f) 
+new_ps = []
+new_f3 = []
+for p in range(len(ps_read)):
+    if (ps_read[p][0]**2 + ps_read[p][1]**2) > 1:
+        new_ps.append(ps_read[p])
+        new_f3.append(f3_read[p])
+        
+# interpolating the fractions with the points    
+tri = Delaunay(new_ps)
+f_f3 = interpnd(tri, new_f3)
 
-    
-tri = Delaunay(ps_read)
-f_f3 = interpnd(tri, f3_read)
+#----------------cartesian interpolation of helium density--------------------#
 
-# simo's values:
-points = np.load('term1/output/f3_coords.npy')
-logf3_values = np.load('term1/output/logf3_values.npy')
-tri = Delaunay(points)   # does the triangulation
-get_logf3 = interpnd(tri, logf3_values)
+pts = []
+nHes = []
 
+for r in rb_sc:
+    for t in thb:
+        pts.append([r * np.sin(t), r * np.cos(t)])
+        nHes.append(f_nHe(r, t).item())
+        
+tri = Delaunay(pts)
+f_nHe_cart = interpnd(tri, nHes)
+#%%
+#plt.subplot(1,2,1)
+#plt.contourf(X, Z, nHe, levels = np.linspace(5e6, 1e8, 100), cmap = "BuPu")
+#plt.colorbar()
+#plt.subplot(1,2,2)
+
+plt.contourf(cart_X, cart_Z, f_nHe_cart(cart_X, cart_Z), 200, cmap = "BuPu")
+plt.colorbar()
+plt.show()
 #%%
 plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
 
@@ -374,5 +367,23 @@ plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
 plt.colorbar()
 
 #%%
+"""
+column density 
 
+"""
 
+dz = (grid_z[1] - grid_z[0]) * rb[0]
+col_d = []
+bs = []
+for b in grid_x:
+    if b >= 1:
+        bs.append(b)
+        d_b = []
+        for z in grid_z:
+            if f_f3(b, z) > 0:
+                d_b.append(f_f3(b, z) * f_nHe_cart(b, z) * dz)
+        col_d.append(sum(d_b))
+        print(b, ' / ', grid_x[-1])
+    
+plt.plot(bs, col_d)
+plt.yscale('log')
