@@ -145,7 +145,9 @@ q13a = 4.5e-20                  # collisional excitation rate 1S -> 2S tri
 q31a = 2.6e-8                   # collisional excitation rate 2S tri -> 2S sing
 q31b = 4.0e-9                   # collisional excitation rate 2S tri -> 2P sing
 Q31 = 5e-10                     # collisional de-exciration rate 2S tri -> 1S
-
+#%% 
+plt.contourf(X, Z, nHe, 200, cmap = "BuPu")
+plt.colorbar()
 
 #%%
 def rhs(l, f, f_r_l, f_t_l):

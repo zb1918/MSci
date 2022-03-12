@@ -99,7 +99,7 @@ n = D / H_mu                        # number density of Hydrogen
 ne = n * Xe                         # electron number density
 XH = 1 - Xe                         # fraction of non ionised Hydrogen
 n0 = n * XH                         # neutral Hydrogen number density
-XHe = 0.25                          # fraction of gas that is Helium
+XHe = 0.3                          # fraction of gas that is Helium
 nHe = XHe * D / He_mu               # number density of Helium
 mHe = XHe * D                       # mass density of Helium
 
@@ -199,12 +199,12 @@ f_f3 = interpnd(tri, f3_read)
 
 #%%
 grid_x = np.linspace(1.04, 2, 500)
-grid_x = np.append(grid_x[0:-1], np.linspace(2, 6, 300))
+grid_x = np.append(grid_x[0:-1], np.linspace(2, 7, 300))
 
-grid_z = np.linspace(-6, 6, 400)
+grid_z = np.linspace(-7, 7, 500)
 
 cart_X, cart_Z = np.meshgrid(grid_x, grid_z)
-
+#%%
 nHe_cart = f_nHe_cart(cart_X, cart_Z)
 T_cart = f_T_cart(cart_X, cart_Z)
 f3_cart = f_f3(cart_X, cart_Z)
@@ -236,45 +236,45 @@ for w in ws:
         todo = len(ws) - index
         eta = todo * (end - start)
         print(index, '\t / \t', len(ws), '\t', 'eta', str(datetime.timedelta(seconds = round(eta, 0))))
-    
-tau_bs = np.array(tau_bs)
 
+   
+tau_bs = np.array(tau_bs)
 
 tau_ws = tau_bs.T
 
-bs = grid_x        
-bs_new = []
-taus_new = []
+abs_frac = np.exp(-tau_ws)
+#%%
+b_mid = (grid_x[1:] + grid_x[:-1]) / 2
+b_mid_l = np.append(grid_x[0], b_mid)
+b_mid_u = np.append(b_mid, grid_x[-1])
+b_diff = b_mid_u**2 - b_mid_l**2
 
-for i in range(len(tau_ws)):
-    if bs[i] > 1:
-        bs_new.append(bs[i])
-        taus_new.append(tau_ws[i])
-        
-
-taus_new = np.array(taus_new)
-abs_frac = np.exp(-taus_new)
-
-b_del = (bs_new[1] - bs_new[0]) * 0.5
-bs_shifted = bs_new + b_del
-bs_shifted_down = np.array([1])
-bs_shifted_down = np.append(bs_shifted_down, bs_shifted[0:-1])
-b_diff = bs_shifted**2 - bs_shifted_down**2
 flux = abs_frac * b_diff[:, None]
-   
+
 flux = np.array(flux)   
 flux = np.sum(flux, 0) 
-flux_frac = 100 * flux / bs_shifted[-1]**2   
+flux_frac = 100 * flux / grid_x[-1]**2   
+
 #%%
 # tau as a function of impact parameter
 
+index = np.where(ws >= w2)[0][0]
+tau_at_central = tau_ws.T[index]
+tau_at_all = np.sum(tau_ws, 1)
+tau_at_broad_central = np.sum(tau_ws.T[index-3:index + 4], 0)
+
 plt.ylabel(r"absorption coefficient $\tau$ ")
 plt.xlabel(r"impact parameter $b$ [$r_{pl}$]")
-tau_b_tot = np.sum(taus_new.T, 0)
-plt.plot(bs_new, tau_b_tot)
-plt.hlines(1, min(bs_new), max(bs_new), color = "red", lw = 0.5)
-plt.ylim(0, 10)
-plt.show()
+plt.plot(grid_x, tau_at_broad_central)
+plt.hlines(1, min(grid_x), max(grid_x), color = "red", lw = 0.5)
+#plt.ylim(0, 10)
+#plt.xlim(0, 10)
+#plt.savefig("term1/images/tau_vs_b.png")
+#plt.title(round(ws[index], 2))
+plt.xlim(1, 6)
+#plt.ylim(0, 0.4)
+#plt.show()
+#plt.plot(grid_x, np.exp(-tau_at_all))
 
 #%%
 

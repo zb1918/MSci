@@ -222,7 +222,7 @@ tau_bs = np.array(tau_bs)
 tau_ws = tau_bs.T
 
 abs_frac = np.exp(-tau_ws)
-
+#%%
 b_mid = (grid_x[1:] + grid_x[:-1]) / 2
 b_mid_l = np.append(grid_x[0], b_mid)
 b_mid_u = np.append(b_mid, grid_x[-1])
@@ -266,12 +266,13 @@ plt.plot(ws, y, color = 'navy')
 plt.xlabel("λ (Å)")
 plt.ylabel(r"$F_{in}$ / $F_{out}$  (%)")
 ax.ticklabel_format(style = 'plain', axis = 'x')
-plt.xticks([w_min, .5 * (w_min + w_max), w_max])
-plt.vlines(w_c[0], min(y), max(y), color = 'red', lw = 0.3)
-plt.vlines(w_c[1], min(y), max(y), color = 'red', lw = 0.3)
-plt.vlines(w_c[2], min(y), max(y), color = 'red', lw = 0.3)
+#plt.xticks([w_min, .5 * (w_min + w_max), w_max])
+plt.vlines(w_c[0], 92, 98, color = 'red', lw = 0.3)
+plt.vlines(w_c[1], 92, 98, color = 'red', lw = 0.3)
+plt.vlines(w_c[2], 92, 98, color = 'red', lw = 0.3)
 #plt.xlim(10828.5, 10831)
 plt.hlines(max(y), min(ws), max(ws),  color = "navy", ls = 'dotted')
+plt.title("without doppler")
 plt.show()
 
 #%%

@@ -68,8 +68,8 @@ def event(t, y, fr, ft):
 event.terminal = True
 
 
-thetas = np.linspace(0, 0.3, 25) * np.pi
-thetas = np.append(thetas, np.linspace(0.3, 0.5, 10) * np.pi)
+thetas = np.linspace(0, 0.5, 200) * np.pi
+#thetas = np.append(thetas, np.linspace(0.3, 0.5, 10) * np.pi)
 #thetas = np.array([0.8])*np.pi
 r_stops = []
 t_stops = []
@@ -194,5 +194,9 @@ with open(file_y, "wb") as fyp:   #Pickling
 
 #%%
 
-with open(file_t, 'rb'):
-    sols_t = pickle.load(file_t)
+with open(file_t, 'rb') as f:
+    sols_t = pickle.load(f)
+with open(file_y, 'rb') as f:
+    sols_y = pickle.load(f)
+for i in range(len(sols_t)):
+    slm.plot_cart(sols_t[i], sols_y[i])

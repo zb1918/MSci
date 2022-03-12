@@ -124,6 +124,10 @@ t3 = 0                                      # optical depth of 2S triplet
 a1 = 2.17e-13                               # recombination rate of 1S 
 a3 = 1.97e-14                               # recombination rate of 2S triplet
 
+#%% 
+plt.contourf(X, Z, np.log10(u), 200, cmap = "BuPu")
+plt.colorbar()
+#%%
 def f_a1(r, t):
     T_i = f_T(r, t, grid = False)
     if T_i <= 1.5e3:
@@ -183,6 +187,22 @@ def rhs(l, f, f_r_l, f_t_l):
     g = [g1, g2]
     return g
 
+def rhs_steady(r, t):
+    
+    a1 = f_a1(r, t)
+    a3 = f_a3(r, t)
+    ne = f_ne(r, t, grid = False)
+    n0 = f_n0(r, t, grid = False)
+    
+    coeff = [
+        [-ne*a1 - F1 - ne*q13a,         ne*q31a + ne*q31b + n0*Q31 + A31 - ne*a1],
+        [ne*a3 - ne*q13a,               ne*a3 + A31 + F3 + ne*q31a + ne*q31b + n0*Q31]
+             ]
+    const = np.array([-ne*a1, ne*a3])
+    g = np.linalg.solve(coeff, const)
+
+    return g[1]
+
 with open(file_t, 'rb') as ftp:
     sols_t = pickle.load(ftp)
 with open(file_y, 'rb') as fyp:
@@ -193,14 +213,16 @@ ts =    []
 f3s =   []
 
 stream_tot = len(sols_t)
-#stream_tot = 1
+#stream_tot = 10
 
 for stream_no in range(stream_tot): # one streamline at a time
+    #stream_no = 63
     sol_y = np.array(sols_y[stream_no]) # thetas
     sol_t = np.array(sols_t[stream_no]) # radial distances
 
     start = time.time()
-
+    
+    
     #print(sol_t[-1], sol_y[10])
     
     '''
@@ -247,20 +269,32 @@ for stream_no in range(stream_tot): # one streamline at a time
     #^^^^^^^^^^^^^^^^^^^^^making arc length array finer^^^^^^^^^^^^^^^^^^^^^^^#
     arc_l = slm.make_fine(l, 5)
     #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv#
-
-    #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^INTEGRATION^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#
-    sol_f = ivp(rhs, l0, [1, 1e-10], method = 'LSODA',
-                args = (f_r_l, f_t_l), t_eval = arc_l,
-                rtol = 1e-12, atol = 1e-10)
-
-    sol_l   = sol_f.t           # arc lengths at which evaluations are made
-    sol_f1  = sol_f.y[0]        # He singlet population along streamline
-    sol_f3  = sol_f.y[1]        # He triplet population along streamline
-    #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv#
     
+    
+    if sol_t[-1] != sol_t[0]: 
+        #continue
+    
+        #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^INTEGRATION^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#
+        sol_f = ivp(rhs, l0, [1, 1e-10], method = 'LSODA',
+                    args = (f_r_l, f_t_l), t_eval = arc_l,
+                    rtol = 1e-12, atol = 1e-10)
+    
+        sol_l   = sol_f.t           # arc lengths at which evaluations are made
+        sol_f1  = sol_f.y[0]        # He singlet population along streamline
+        sol_f3  = sol_f.y[1]        # He triplet population along streamline
+        #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv#
+         
+    else:
+        sol_f3 = []
+        for l_i in arc_l:
+            r_i = f_r_l(l_i)
+            t_i = f_t_l(l_i)
+            sol_f3.append(rhs_steady(r_i, t_i))
+        sol_l = arc_l
+       
+        
     stream_r = []
     stream_t = []
-    
     for lx in sol_l:
         stream_r.append(f_r_l(lx).item() * rb[0])
         stream_t.append(f_t_l(lx).item())
@@ -268,7 +302,7 @@ for stream_no in range(stream_tot): # one streamline at a time
     rs.append(stream_r)    
     ts.append(stream_t)    
     f3s.append(sol_f3)
-    
+    '''
     plt.plot(stream_r / rb[0], sol_f3, color = str_color)
     plt.xticks([1, 3, 5, 7, 9, 11, 13])    
     
@@ -276,45 +310,67 @@ for stream_no in range(stream_tot): # one streamline at a time
     plt.xlabel(r"radius [$r_{pl}$]")
     #plt.savefig('term1/images/he_frac_mhd.png')
     plt.show()
-    '''
+    
     fig, ax = plt.subplots()     
     slm.plot_cart(stream_r, stream_t)
     planet = plt.Circle((0, 0), 1, color=pl_color)
     ax.add_patch(planet)
     plt.show()
-    '''
+    '''    
     end = time.time()
-    print(stream_no + 1, '/', len(sols_t), '  ', round(end - start, 2), ' seconds elapsed',
-          '\t', 'eta', str(datetime.timedelta(seconds = round((end - start) * (stream_tot - stream_no - 1), 0))))
-
     
-   
+    if stream_no % 10 == 0:
+        print(stream_no, '/', len(sols_t), '  ', round(end - start, 2), ' seconds elapsed',
+              '\t', 'eta', str(datetime.timedelta(seconds = round((end - start) * (stream_tot - stream_no - 1), 0))))
+    
+    
+#%%
 flat_rs = slm.flatten(rs)
 flat_rs_sc = [r / rb[0] for r in flat_rs]
 flat_ts = slm.flatten(ts)
 flat_f3s = slm.flatten(f3s)
 
-#%%
-file_f3 = 'term1/output/f3_mhd_8.p'
-file_ps = 'term1/output/ps_mhd_8.p'
+# night-side flow added to flattened arrays
+'''
+night_r_sc = np.linspace(1.04, 14, 100)
+night_t = np.linspace(-0.5, 0, 100) * np.pi
+
+full_t = np.linspace(-0.5, 0.5, 100) * np.pi
 
 
+f3s_night = []
+night_ts = []
+night_rs_sc = []
+
+for r_i in night_r_sc:
+    for t_i in night_t:
+        flat_ts.append(t_i)
+        flat_rs_sc.append(r_i)
+        flat_f3s.append(rhs_steady(r_i, t_i))
+        #print(rhs_steady(r_i, t_i))
+'''        
 #%%
 # combining into coordinates and triangulation + interpolation
 pts_polar = [list(pair) for pair in zip(flat_rs_sc, flat_ts)]
-pts_carte = [[coord[0]*np.sin(coord[1]), coord[0]*np.cos(coord[1])] for coord in pts_polar]
+pts_carte = [[coord[0] * np.sin(coord[1]), coord[0] * np.cos(coord[1])] for coord in pts_polar]
 
 tri = Delaunay(pts_carte)
 f_f3 = interpnd(tri, flat_f3s)
 
 #plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), 200, cmap = "BuPu")
-plt.contourf(X, Z, f_f3(X, Z), 200, cmap = "BuPu")
+plt.contourf(X, Z, f_f3(X, Z), levels = np.linspace(5e-9, 5e-7, 50), cmap = "BuPu")
 plt.colorbar()
 
+#%% 
+plt.contourf(X, Z, nHe, 200, cmap = "BuPu")
+plt.colorbar()
+#%%
+file_f3 = 'term1/output/f3_mhd_8.p'
+file_ps = 'term1/output/ps_mhd_8.p'
 
 #%%
-'''
 
+'''
 # saving the f3s and pts_carte arrays
 with open(file_f3, "wb") as f:   
     pickle.dump(flat_f3s, f)
@@ -339,6 +395,10 @@ for p in range(len(ps_read)):
 tri = Delaunay(new_ps)
 f_f3 = interpnd(tri, new_f3)
 
+plt.contourf(cart_X, cart_Z, f_f3(cart_X, cart_Z), levels = np.linspace(5e-9, 5e-7, 50), cmap = "BuPu")
+plt.colorbar()
+plt.show()
+
 #----------------cartesian interpolation of helium density--------------------#
 
 pts = []
@@ -351,6 +411,9 @@ for r in rb_sc:
         
 tri = Delaunay(pts)
 f_nHe_cart = interpnd(tri, nHes)
+
+
+
 #%%
 plt.subplot(1,2,1)
 plt.contourf(X, Z, nHe, levels = np.linspace(5e7, 1e9, 100), cmap = "BuPu")
